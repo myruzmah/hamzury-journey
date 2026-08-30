@@ -312,6 +312,7 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut) 40px}
     <button onclick="app.open('questions')">Questions</button>
     <button onclick="app.open('fees')">Fees</button>
     <button onclick="app.open('apply')">Apply</button>
+    <button onclick="app.open('resume')">Continue my application</button>
     <span class="tiny">Prototype · payments simulated</span>
   </div>
 </footer>
@@ -509,6 +510,9 @@ const QID = id => QP.find(q=>q.id===id);
 const STEP = ["Explore","Check","Your details","Application fee","Send evidence","Confirmed"];
 const BANK = { bank:"Moniepoint", name:"Hamzury Mainstream Ltd", acct:"82025158500" };
 const WHATSAPP = "08067149356";
+/* Apps Script Web app URL. Empty = disabled; the site falls back to WhatsApp only,
+   so a broken or missing endpoint can never block an applicant. */
+const SHEET_URL = "";
 /* SIWES / internship placements are priced by duration, not per month */
 
 /* ---- level check: three questions, asked once ---- */
@@ -648,6 +652,70 @@ V.fees = () => ({ t:"Fees", sub:"Two payments, at two different moments.", h:
          ["Direct Internship",N(70000)+" per month"],
          ["Longer placements","Progression stays monthly. Each month is its own cycle."],
          ["Foundation","Set at review"]]) });
+
+/* ---- Continue an application: check verification, then choose a track ---- */
+let RS = { ref:"", state:null, track:null };
+V.resume = () => ({ t:"Continue my application", sub:"Enter the reference from your application.", h:'<div id="rs"></div>', after:()=>rsStep() });
+
+function rsStep(){
+  const box=$("#rs"); if(!box) return;
+  if(!SHEET_URL){
+    box.innerHTML = '<div class="note">Checking is not switched on yet. Send your reference on WhatsApp and we will confirm there.</div>'
+      + '<div class="actions"><a class="btn primary" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="https://wa.me/234'+WHATSAPP.replace(/^0/,"")+'">Open WhatsApp</a></div>';
+    return;
+  }
+  if(!RS.state){
+    box.innerHTML = '<div class="field"><label for="rs-ref">Your reference</label>'
+      + '<input id="rs-ref" placeholder="HMZ-2026-XXXXX" autocomplete="off" value="'+esc(RS.ref)+'">'
+      + '<div class="err" id="rs-err"></div></div>'
+      + '<div class="actions"><button class="btn primary" onclick="app.rsCheck()">Check my application</button></div>';
+    return;
+  }
+  if(RS.state==="PENDING")
+    box.innerHTML = '<h2>Still being checked.</h2><div class="sub">A person checks every payment. You will be contacted once it is confirmed.</div>';
+  else if(RS.state==="REJECTED")
+    box.innerHTML = '<h2>We could not confirm your payment.</h2><div class="sub">Send a clearer receipt on WhatsApp, quoting '+esc(RS.ref)+'.</div>'
+      + '<div class="actions"><a class="btn primary" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="https://wa.me/234'+WHATSAPP.replace(/^0/,"")+'?text='+encodeURIComponent("Hamzury "+RS.ref+" — new receipt attached.")+'">Open WhatsApp</a></div>';
+  else if(RS.state==="NOT_FOUND")
+    box.innerHTML = '<h2>We do not have that reference.</h2><div class="sub">Check it and try again, or contact us on WhatsApp.</div>'
+      + '<div class="actions"><button class="btn quiet" onclick="app.rsReset()">Try another reference</button></div>';
+  else if(RS.state==="VERIFIED"){
+    box.innerHTML = '<div class="label accent">Application verified</div>'
+      + '<h2 style="margin:12px 0 8px">Choose your track.</h2>'
+      + '<div class="sub">This is the last step before orientation.</div>'
+      + '<div class="opts" style="margin-top:24px">' + TR.map(t=>
+          '<button class="opt" onclick="app.rsPick(\''+t.id+'\')" aria-pressed="'+(RS.track===t.id)+'"><span>'+esc(t.nm)+
+          '<small>'+N(t.p)+'</small></span><span class="mark">→</span></button>').join("") + '</div>'
+      + (RS.track?'<div class="actions"><button class="btn primary" onclick="app.rsSubmit()">Confirm '+esc(trk(RS.track).nm)+'</button></div>':"");
+  }
+  else if(RS.state==="DONE")
+    box.innerHTML = '<div class="label accent">Track confirmed</div>'
+      + '<h2 style="margin:12px 0 8px">'+esc(trk(RS.track).nm)+'</h2>'
+      + '<div class="sub">We have your choice. You will be contacted with orientation and the programme fee.</div>';
+  else
+    box.innerHTML = '<div class="note">We could not check right now. Try again, or use WhatsApp.</div>'
+      + '<div class="actions"><button class="btn quiet" onclick="app.rsReset()">Try again</button></div>';
+}
+async function rsCheck(){
+  const v=($("#rs-ref").value||"").trim().toUpperCase();
+  if(!/^HMZ-/.test(v)){ $("#rs-err").textContent="That does not look like a reference."; return; }
+  RS.ref=v; $("#rs-err").textContent="Checking…";
+  try{
+    const r=await fetch(SHEET_URL+"?ref="+encodeURIComponent(v),{method:"GET"});
+    const d=await r.json();
+    RS.state=d.status||"ERROR"; RS.track=null;
+  }catch(e){ RS.state="ERROR"; }
+  rsStep();
+}
+function rsPick(id){ RS.track=id; rsStep(); }
+function rsSubmit(){
+  const t=trk(RS.track);
+  try{ fetch(SHEET_URL,{method:"POST",mode:"no-cors",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({ref:RS.ref, track:t?t.nm:RS.track})}); }catch(e){}
+  RS.state="DONE"; rsStep();
+}
+function rsReset(){ RS={ref:"",state:null,track:null}; rsStep(); }
 
 V.questions = () => ({ t:"Questions", h:
   '<dl class="facts">' + QA.map(x=>'<div class="fact"><dt style="letter-spacing:0;text-transform:none;font-size:14px;color:var(--ink);font-weight:600">'+esc(x[0])+'</dt><dd style="color:var(--muted)">'+esc(x[1])+'</dd></div>').join("") + "</dl>" });
@@ -897,8 +965,26 @@ const payRow = (k,v) => '<div class="payrow"><span class="pk">'+esc(k)+'</span><
 const nextRow = (n,t,m) => '<div class="nextrow"><span class="nn">'+n+'</span><span><b>'+esc(t)+'</b><small>'+esc(m)+'</small></span></div>';
 const mkRef = () => "HMZ-"+new Date().getFullYear()+"-"+Math.random().toString(36).slice(2,7).toUpperCase();
 function copyRef(){ try{ navigator.clipboard.writeText(A.ref); toast("Reference copied"); }catch(e){ toast(A.ref); } }
+/* Fire-and-forget. text/plain avoids a CORS preflight Apps Script cannot answer.
+   We never read the response and never wait for it. */
+function postToSheet(extra){
+  if(!SHEET_URL) return;
+  const body = Object.assign({
+    ref:A.ref, name:A.name, phone:A.phone, email:A.email, location:A.location,
+    age:S.age||"", route:(RT[A.route]||{}).t||"",
+    track:A.track ? (trk(A.track)?trk(A.track).nm:A.track) : "",
+    start:S.level==="needs"?"Foundation first":S.level==="ready"?"Straight to track":""
+  }, extra||{});
+  try{
+    fetch(SHEET_URL,{method:"POST",mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify(body)});
+  }catch(e){ /* never block the applicant on this */ }
+}
+
 function finishApp(){
   A.submitted = new Date().toISOString();
+  postToSheet();
   try{ localStorage.setItem("hamzury.application", JSON.stringify({
     ref:A.ref, at:A.submitted, name:A.name, email:A.email, phone:A.phone, location:A.location,
     route:A.route, level:S.level, track:A.track||S.track||null })); }catch(e){}
@@ -1035,6 +1121,7 @@ paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
          setRoute, setTrack, chk, copyRef, finishApp,
+  rsCheck, rsPick, rsSubmit, rsReset,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
