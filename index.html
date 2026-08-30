@@ -926,16 +926,6 @@ function submit(){
   /* fetch("/api/applications",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rec)}) */
   aStep();
 }
-function dlApp(){ if(!S.app) return; save("hamzury-"+S.app.ref+".json", JSON.stringify(S.app,null,2), "application/json"); }
-function dl(y){
-  const rows=[["year","month","cohort","participants","projects","businesses","outcomes"]];
-  const yy=TY.find(t=>t.y===y);
-  (yy.months.length?yy.months:["—"]).forEach(m=>rows.push([y,m,"—","—","—","—","—"]));
-  save("hamzury-treasury-"+y+".csv", rows.map(r=>r.join(",")).join("\n"), "text/csv");
-  toast("Public data schema downloaded");
-}
-function save(n,c,t){ const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement("a");
-  a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),800); }
 
 /* --- modal + router --- */
 const modal=$("#modal"), panel=$("#panel"), content=$("#content"), backbtn=$("#backbtn");
@@ -1023,7 +1013,7 @@ V.sponsorship = () => ({ t:"Sponsorship", sub:"Fund a participant.", h:
 paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
-         setRoute, setTrack, chk, dl, copyRef, finishApp,
+         setRoute, setTrack, chk, copyRef, finishApp,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
