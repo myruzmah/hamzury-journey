@@ -507,7 +507,7 @@ const QP = [
 const QID = id => QP.find(q=>q.id===id);
 
 /* ---- application: nine steps ---- */
-const STEP = ["Explore","Check","Your details","Application fee","Send evidence","Confirmed"];
+const STEP = ["Explore","Check","Your programme","Your details","Application fee","Send evidence","Confirmed"];
 const BANK = { bank:"Moniepoint", name:"Hamzury Mainstream Ltd", acct:"82025158500" };
 const WHATSAPP = "08067149356";
 /* Apps Script Web app URL. Empty = disabled; the site falls back to WhatsApp only,
@@ -688,10 +688,23 @@ function rsStep(){
           '<small>'+N(t.p)+'</small></span><span class="mark">→</span></button>').join("") + '</div>'
       + (RS.track?'<div class="actions"><button class="btn primary" onclick="app.rsSubmit()">Confirm '+esc(trk(RS.track).nm)+'</button></div>':"");
   }
-  else if(RS.state==="DONE")
+  else if(RS.state==="DONE"){
+    /* verified applicant, track chosen -> now the programme fee, with the same
+       honest posture as the application fee: evidence by WhatsApp, human check. */
+    const t=trk(RS.track);
     box.innerHTML = '<div class="label accent">Track confirmed</div>'
-      + '<h2 style="margin:12px 0 8px">'+esc(trk(RS.track).nm)+'</h2>'
-      + '<div class="sub">We have your choice. You will be contacted with orientation and the programme fee.</div>';
+      + '<h2 style="margin:12px 0 8px">'+esc(t.nm)+'</h2>'
+      + '<div class="sub">This is the programme fee. It is separate from the '+N(FEE)+' you already paid.</div>'
+      + '<div class="pay" style="margin-top:24px">'
+        + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
+        + payRow("Account number", BANK.acct) + payRow("Amount", N(t.p))
+        + payRow("Use as reference", RS.ref)
+      + '</div>'
+      + '<div class="actions"><a class="btn primary" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener"'
+      + ' href="https://wa.me/234'+WHATSAPP.replace(/^0/,"")+'?text='+encodeURIComponent(
+          "HAMZURY PROGRAMME FEE\nReference: "+RS.ref+"\nProgramme: "+t.nm+"\nAmount: "+N(t.p)+" — receipt attached.")+'">Send evidence</a></div>'
+      + '<div class="note">A person checks it. Once confirmed you receive your offer letter and orientation.</div>';
+  }
   else
     box.innerHTML = '<div class="note">We could not check right now. Try again, or use WhatsApp.</div>'
       + '<div class="actions"><button class="btn quiet" onclick="app.rsReset()">Try again</button></div>';
@@ -868,6 +881,43 @@ const prog = () => '<div class="prog">'+STEP.map((_,i)=>'<i class="'+(i<A.s?"don
 const acts = (b,n,l) => '<div class="actions">'+(b?'<button class="btn quiet" onclick="app.aBack()">Back</button>':"")
   + (n?'<button class="btn primary" onclick="'+n+'">'+(l||"Continue")+'</button>':"")+'</div>';
 
+function pickProg(v){ if(A.route==="siwes") A.siwes=v; else A.track=v; aStep(); }
+function clearProg(){ if(A.route==="siwes") A.siwes=null; else A.track=null; aStep(); }
+function progLabel(){
+  if(A.route==="junior") return A.track==="hardware"?"Robotics / Hardware":A.track==="software"?"Software":"Programme fee";
+  if(A.route==="siwes") return A.siwes==="intern"?"Direct internship":A.siwes?("SIWES · "+A.siwes+" month"+(A.siwes==="1"?"":"s")):"Placement fee";
+  return A.track&&trk(A.track)?trk(A.track).nm:"Programme fee";
+}
+function progFee(){
+  if(A.route==="junior") return A.track==="hardware"?N(130000):A.track==="software"?N(40000):"To be confirmed";
+  if(A.route==="siwes"){ const m={"1":30000,"2":50000,"3":70000,"intern":70000}[A.siwes];
+    return m?N(m)+(A.siwes==="intern"?" / month":""):"To be confirmed"; }
+  return A.track&&trk(A.track)?N(trk(A.track).p):"To be confirmed";
+}
+
+/* There is no backend. The WhatsApp message IS the application record,
+   so it carries every detail Hamzury needs to open a file on this person. */
+function applicationMessage(){
+  const L=[];
+  L.push("HAMZURY APPLICATION");
+  L.push("Reference: "+(A.ref||""));
+  L.push("");
+  L.push("Name: "+(A.name||"—"));
+  L.push("Phone: "+(A.phone||"—"));
+  L.push("Email: "+(A.email||"—"));
+  L.push("Location: "+(A.location||"—"));
+  if(S.age) L.push("Age: "+S.age);
+  L.push("");
+  L.push("Route: "+((RT[A.route]||{}).t||"—"));
+  if(A.track) L.push("Track: "+(trk(A.track)?trk(A.track).nm:A.track));
+  L.push("Starting point: "+(S.level==="needs"?"Foundation first":S.level==="ready"?"Straight to track":"To be confirmed"));
+  L.push("");
+  L.push("Programme chosen: "+progLabel()+" — "+progFee());
+  L.push("");
+  L.push("Application fee: "+N(FEE)+" — receipt attached.");
+  return L.join("\n");
+}
+
 function aStep(){
   const box=$("#a"); if(!box) return;
   const r = A.route?RT[A.route]:null;
@@ -894,14 +944,51 @@ function aStep(){
     }
     break;
 
-  case 2: /* BIO */
+  case 2: /* YOUR PROGRAMME — chosen, and priced, before any money moves */
+    {
+      const opts = A.route==="junior"
+        ? [["software","Software",40000],["hardware","Robotics / Hardware",130000]]
+        : A.route==="siwes"
+          ? [["1","SIWES · 1 month",30000],["2","SIWES · 2 months",50000],["3","SIWES · 3 months",70000],["intern","Direct internship · per month",70000]]
+          : TR.map(t=>[t.id,t.nm,t.p]);
+      const picked = A.route==="siwes" ? A.siwes : A.track;
+      if(A.route==="founder"||A.route==="ecosystem"){
+        h += '<h2>No track is chosen here.</h2><div class="sub">This route is confirmed with you directly, and the fee is set at review.</div>'
+          + acts(true,"app.aNext()");
+      } else if(!picked){
+        h += '<div class="q">Which programme?</div>'
+          + (A.route==="junior"?'<div class="note">Basic Foundation ('+N(25000)+') comes first, then the route you choose here.</div>':"")
+          + '<div class="opts">' + opts.map(o=>
+              '<button class="opt" onclick="app.pickProg(\''+o[0]+'\')"><span>'+esc(o[1])+
+              '</span><span class="mark">'+N(o[2])+'</span></button>').join("") + '</div>'
+          + acts(true,null);
+      } else {
+        const o = opts.find(x=>x[0]===picked) || opts[0];
+        const t = (A.route!=="siwes" && A.route!=="junior") ? trk(picked) : null;
+        h += '<h2>'+esc(o[1])+'</h2>'
+          + facts([
+              ["Why", t?esc(t.prob):"You join the professional journey as Junior Staff."],
+              ["Required", S.level==="needs"?"Foundation first — one month.":"You are ready for this."],
+              ["You will", t?esc(t.work):"Work five days a week on the journey your level supports."],
+              ["Next", t?esc(t.out):"Progress month by month."],
+              ["Price", "<b>"+N(o[2])+"</b>"+(picked==="intern"?" per month":"")
+                 +(A.route==="junior"?" — after Basic Foundation "+N(25000):"")]
+            ])
+          + '<div class="note">This is not what you pay today. Today is the '+N(FEE)+' application fee. The programme fee comes only after your application is verified.</div>'
+          + '<div class="actions"><button class="btn quiet" onclick="app.clearProg()">Change</button>'
+          + '<button class="btn primary" onclick="app.aNext()">Continue</button></div>';
+      }
+    }
+    break;
+
+  case 3: /* BIO */
     h += ['name|Name|text','email|Email|email','phone|Phone|tel','location|Location|text']
       .map(fd=>{const [k,l,t]=fd.split("|");
         return '<div class="field"><label for="f-'+k+'">'+l+'</label><input id="f-'+k+'" type="'+t+'" value="'+esc(A[k]||"")+'"><div class="err" id="e-'+k+'"></div></div>';}).join("")
       + acts(true,"app.aNext()");
     break;
 
-  case 3: /* APPLICATION FEE — official instructions, clearly not tuition */
+  case 4: /* APPLICATION FEE — official instructions, clearly not tuition */
     h += '<div class="big">'+N(FEE)+'</div>'
       + '<div class="sub" style="margin-top:14px">Application fee. Not programme tuition, and it does not guarantee admission.</div>'
       + '<div class="pay">'
@@ -909,32 +996,12 @@ function aStep(){
         + payRow("Account number", BANK.acct) + payRow("Amount", N(FEE))
         + payRow("Use as reference", A.ref || (A.ref = mkRef()))
       + '</div>'
-      + '<div class="amt"><div class="l">Programme fee</div><div class="v later">Separate, later, only if you continue</div></div>'
+      + '<div class="amt"><div class="l">'+esc(progLabel())+'<small>Separate, later, only after your application is verified</small></div><div class="v later">'+progFee()+'</div></div>' 
       + acts(true,"app.aNext()","I have paid");
     break;
 
-/* There is no backend. The WhatsApp message IS the application record,
-   so it carries every detail Hamzury needs to open a file on this person. */
-function applicationMessage(){
-  const L=[];
-  L.push("HAMZURY APPLICATION");
-  L.push("Reference: "+(A.ref||""));
-  L.push("");
-  L.push("Name: "+(A.name||"—"));
-  L.push("Phone: "+(A.phone||"—"));
-  L.push("Email: "+(A.email||"—"));
-  L.push("Location: "+(A.location||"—"));
-  if(S.age) L.push("Age: "+S.age);
-  L.push("");
-  L.push("Route: "+((RT[A.route]||{}).t||"—"));
-  if(A.track) L.push("Track: "+(trk(A.track)?trk(A.track).nm:A.track));
-  L.push("Starting point: "+(S.level==="needs"?"Foundation first":S.level==="ready"?"Straight to track":"To be confirmed"));
-  L.push("");
-  L.push("Application fee: "+N(FEE)+" — receipt attached.");
-  return L.join("\n");
-}
 
-  case 4: /* SEND EVIDENCE — honest: no backend, so it goes to WhatsApp */
+  case 5: /* SEND EVIDENCE — honest: no backend, so it goes to WhatsApp */
     h += '<div class="q">Send your payment evidence.</div>'
       + '<div class="sub">Send your receipt on WhatsApp, quoting your reference. A person checks it — verification is not automatic.</div>'
       + '<div class="pay" style="margin-top:26px">' + payRow("WhatsApp", WHATSAPP) + payRow("Your reference", A.ref) + '</div>'
@@ -945,7 +1012,7 @@ function applicationMessage(){
       + acts(true,"app.finishApp()","I have sent it");
     break;
 
-  case 5: /* CONFIRMED — what happens next */
+  case 6: /* CONFIRMED — what happens next */
     h = '<div class="label accent">Application received</div>'
       + '<h2 style="margin:14px 0 8px">'+esc(A.ref)+'</h2>'
       + '<div class="sub">Keep this reference. It identifies your application.</div>'
@@ -1001,7 +1068,9 @@ function setFounder(v){ A.founder=v; aStep(); }
 function chk(i){ A.chk += CHK[A.ci].a[i][1]; A.cans[A.ci]=i; A.ci++; aStep(); }
 function setErr(id,m){ const i=$("#f-"+id),e=$("#e-"+id); if(e)e.textContent=m||""; if(i)i.setAttribute("aria-invalid",m?"true":"false"); return !m; }
 function aNext(){
-  if(A.s===2){
+  if(A.s===2 && A.route!=="founder" && A.route!=="ecosystem"
+     && !(A.route==="siwes"?A.siwes:A.track)) return;
+  if(A.s===3){                       /* bio moved to step 3 when the programme step was inserted */
     A.name=$("#f-name").value.trim(); A.email=$("#f-email").value.trim();
     A.phone=$("#f-phone").value.trim(); A.location=$("#f-location").value.trim();
     let ok=true;
@@ -1121,7 +1190,7 @@ paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
          setRoute, setTrack, chk, copyRef, finishApp,
-  rsCheck, rsPick, rsSubmit, rsReset,
+  rsCheck, rsPick, rsSubmit, rsReset, pickProg, clearProg,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
