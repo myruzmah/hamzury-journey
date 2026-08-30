@@ -676,7 +676,7 @@ TY.forEach(y=>{
       ? '<div class="index" style="margin-top:30px">'+y.months.map(m=>
           '<button class="row" onclick="app.open(\'m-'+y.y+'-'+m+'\')"><span class="n"></span><span class="t" style="font-size:19px">'+m+'</span><span class="go">→</span></button>').join("")+'</div>'
       : '<div class="empty" style="margin-top:30px">Records appear here as the Treasury is updated.</div>') +
-    '<button class="btn quiet" style="margin-top:30px" onclick="app.dl('+y.y+')">Download public data</button>' });
+    '<p class="tiny" style="margin-top:30px">Public records will be published here, and downloadable, once the Treasury holds data.</p>' });
   y.months.forEach(m=>{
     V["m-"+y.y+"-"+m] = () => ({ t:m+" "+y.y, h:
       '<div class="crumbs"><button onclick="app.open(\'treasury\')">Treasury</button><span>/</span>'+
