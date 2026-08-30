@@ -1,0 +1,5 @@
+# never publish the internal prototype or any local data
+hamzury-system.html
+*.local.html
+*-backup.html
+.DS_Store
