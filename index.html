@@ -654,14 +654,60 @@ V.fees = () => ({ t:"Fees", sub:"Two payments, at two different moments.", h:
          ["Foundation","Set at review"]]) });
 
 /* ---- Continue an application: check verification, then choose a track ---- */
-let RS = { ref:"", state:null, track:null };
+let RS = { ref:"", state:null, track:null, gate:null };
 V.resume = () => ({ t:"Continue my application", sub:"Enter the reference from your application.", h:'<div id="rs"></div>', after:()=>rsStep() });
 
 function rsStep(){
   const box=$("#rs"); if(!box) return;
+  /* Without the endpoint we cannot check verification ourselves, so we ask —
+     honestly — and warn against paying a programme fee before confirmation. */
   if(!SHEET_URL){
-    box.innerHTML = '<div class="note">Checking is not switched on yet. Send your reference on WhatsApp and we will confirm there.</div>'
-      + '<div class="actions"><a class="btn primary" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="https://wa.me/234'+WHATSAPP.replace(/^0/,"")+'">Open WhatsApp</a></div>';
+    if(!RS.ref){
+      box.innerHTML = '<div class="field"><label for="rs-ref">Your reference</label>'
+        + '<input id="rs-ref" placeholder="HMZ-2026-XXXXX" autocomplete="off">'
+        + '<div class="err" id="rs-err"></div></div>'
+        + '<div class="sub">It is on your application confirmation, and in the message you sent us.</div>'
+        + '<div class="actions"><button class="btn primary" onclick="app.rsSetRef()">Continue</button></div>';
+      return;
+    }
+    if(!RS.gate){
+      box.innerHTML = '<div class="q">Has Hamzury confirmed your application?</div>'
+        + '<div class="sub">We verify every payment by hand, then tell you. Continue only if you have had that confirmation.</div>'
+        + '<div class="opts" style="margin-top:26px">'
+        + '<button class="opt" onclick="app.rsGate(\'yes\')"><span>Yes, my application was confirmed<small>Continue to your track and its fee</small></span><span class="mark">→</span></button>'
+        + '<button class="opt" onclick="app.rsGate(\'no\')"><span>Not yet<small>Ask us to check where your application is</small></span><span class="mark">→</span></button>'
+        + '</div>';
+      return;
+    }
+    if(RS.gate==="no"){
+      box.innerHTML = '<h2>We will check it for you.</h2>'
+        + '<div class="sub">Send us your reference and we will tell you where your application stands.</div>'
+        + '<div class="actions"><a class="btn primary" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="https://wa.me/234'+WHATSAPP.replace(/^0/,"")+'?text='+encodeURIComponent("Hamzury — please check my application status.")+'">Ask on WhatsApp</a>'
+        + '<button class="btn quiet" onclick="app.rsReset()">Back</button></div>';
+      return;
+    }
+    if(!RS.track){
+      box.innerHTML = '<div class="q">Choose your track.</div>'
+        + '<div class="sub">The programme fee is separate from the '+N(FEE)+' you already paid.</div>'
+        + '<div class="opts" style="margin-top:24px">' + TR.map(t=>
+            '<button class="opt" onclick="app.rsPick(\''+t.id+'\')"><span>'+esc(t.nm)+'<small>'+N(t.p)+'</small></span><span class="mark">→</span></button>').join("")
+        + '</div>';
+      return;
+    }
+    const t=trk(RS.track);
+    box.innerHTML = '<div class="label accent">Programme fee</div>'
+      + '<h2 style="margin:12px 0 8px">'+esc(t.nm)+'</h2>'
+      + '<div class="sub">Separate from the '+N(FEE)+' application fee.</div>'
+      + '<div class="pay" style="margin-top:24px">'
+        + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
+        + payRow("Account number", BANK.acct) + payRow("Amount", N(t.p))
+        + payRow("Use as reference", RS.ref||"Your reference")
+      + '</div>'
+      + '<div class="actions"><a class="btn primary" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener"'
+      + ' href="https://wa.me/234'+WHATSAPP.replace(/^0/,"")+'?text='+encodeURIComponent(
+          "HAMZURY PROGRAMME FEE\nReference: "+(RS.ref||"")+"\nProgramme: "+t.nm+"\nAmount: "+N(t.p)+" — receipt attached.")+'">Send evidence</a>'
+      + '<button class="btn quiet" onclick="app.rsPickBack()">Change track</button></div>'
+      + '<div class="note">Do not send this before your application is confirmed. A person checks every payment.</div>';
     return;
   }
   if(!RS.state){
@@ -728,7 +774,14 @@ function rsSubmit(){
     body:JSON.stringify({ref:RS.ref, track:t?t.nm:RS.track})}); }catch(e){}
   RS.state="DONE"; rsStep();
 }
-function rsReset(){ RS={ref:"",state:null,track:null}; rsStep(); }
+function rsReset(){ RS={ref:"",state:null,track:null,gate:null}; rsStep(); }
+function rsGate(v){ RS.gate=v; rsStep(); }
+function rsSetRef(){
+  const v=($("#rs-ref").value||"").trim().toUpperCase();
+  if(!/^HMZ-/.test(v)){ $("#rs-err").textContent="That does not look like a reference."; return; }
+  RS.ref=v; rsStep();
+}
+function rsPickBack(){ RS.track=null; rsStep(); }
 
 V.questions = () => ({ t:"Questions", h:
   '<dl class="facts">' + QA.map(x=>'<div class="fact"><dt style="letter-spacing:0;text-transform:none;font-size:14px;color:var(--ink);font-weight:600">'+esc(x[0])+'</dt><dd style="color:var(--muted)">'+esc(x[1])+'</dd></div>').join("") + "</dl>" });
@@ -1190,7 +1243,7 @@ paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
          setRoute, setTrack, chk, copyRef, finishApp,
-  rsCheck, rsPick, rsSubmit, rsReset, pickProg, clearProg,
+  rsCheck, rsPick, rsSubmit, rsReset, rsGate, rsSetRef, rsPickBack, pickProg, clearProg,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
