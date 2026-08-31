@@ -338,7 +338,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 
 /* level: null = not checked · "needs" = start at foundation · "ready" = continue */
-const S = { level:null, age:null, route:null, track:null, guess:null, stack:0, app:null };
+const S = { level:null, jroute:null, age:null, route:null, track:null, guess:null, stack:0, app:null };
 
 /* ---- nodes: four facts each, nothing more ---- */
 const ND = {
@@ -354,21 +354,40 @@ const ND = {
   revenue:  { nm:"Revenue",    why:"Value the market recognised.", req:"Delivered work.", will:"Sell, deliver and review honestly.", next:"CEO" },
   ceo:      { nm:"CEO",        why:"Can I make it work?", req:"Evidence across the cycle.", will:"Operate the business you built.", next:"Founder" },
   founder:  { nm:"Founder",    why:"Can I build the system that works?", req:"CEO capability, verified.", will:"Build systems, team and structure. One month, one achievement.", next:"Ecosystem" },
+  product:  { nm:"Product",    why:"Can a customer understand and receive it?", req:"An existing business.", will:"Make the offer clear and repeatable.", next:"Marketing" },
+  marketing:{ nm:"Marketing",  why:"Random posting is not marketing.", req:"A clear product.", will:"Build audience, message, content, lead, follow-up.", next:"Sales" },
+  sales:    { nm:"Sales",      why:"Interest has to go somewhere.", req:"Demand.", will:"Build the path from prospect to decision.", next:"CRM" },
+  crm:      { nm:"CRM",        why:"Customers should not live in WhatsApp memory.", req:"Sales activity.", will:"Build lead, follow-up, customer, delivery, retention.", next:"Finance" },
+  finance:  { nm:"Finance",    why:"You cannot decide what you cannot see.", req:"Revenue.", will:"Build visibility over money in and out.", next:"Operations" },
+  operations:{nm:"Operations", why:"What happens after payment?", req:"Delivery.", will:"Define who does what, and when.", next:"Workflows" },
+  workflows:{ nm:"Workflows",  why:"Repeated work should be repeatable.", req:"Operations.", will:"Turn habits into process.", next:"Automation" },
+  automation:{nm:"Automation", why:"Technology should remove manual work.", req:"Workflows.", will:"Automate what should not need you.", next:"Team" },
+  team:     { nm:"Team",       why:"The CEO should not do everything.", req:"Systems worth handing over.", will:"Bring in the capability you lack.", next:"Management" },
+  management:{nm:"Management", why:"People, systems, numbers, outcomes.", req:"A team.", will:"Manage rather than perform.", next:"Scale" },
+  scale:    { nm:"Scale",      why:"Growth without collapse.", req:"Management.", will:"Grow what already works.", next:"Founder" },
+  business: { nm:"Business",   why:"A skill is not yet a business.", req:"A market and an offer.", will:"Build name, brand, offer, landing page, WhatsApp, CRM, operations.", next:"Revenue" },
+  present:  { nm:"Present",    why:"Work that cannot be shown cannot be sold.", req:"A finished project.", will:"Show it and defend it.", next:"Next level" },
+  test:     { nm:"Test",       why:"It has to actually work.", req:"A build.", will:"Test, break and fix it.", next:"Project" },
+  proven:   { nm:"Proven business", why:"You have already done it once.", req:"Revenue over ₦1,000,000.", will:"Build from experience, not from zero.", next:"Ecosystem" },
+  expand:   { nm:"Expand",     why:"Growth or a second venture.", req:"A working business.", will:"Strengthen, expand or start something new.", next:"New venture" },
+  venture:  { nm:"New venture",why:"You do not restart at the beginning.", req:"Founder experience.", will:"Assess, build, launch, manage.", next:"Scale" },
   eco:      { nm:"Ecosystem",  why:"Independent, not alone.", req:"Founder status.", will:"Own your company, keep the network.", next:"—" }
 };
 
 /* ---- routes. The map ADAPTS to level - the visitor never chooses Foundation ---- */
 const RT = {
   junior:{ t:"Junior Innovator", m:"Ages 13–16", min:13, max:16,
-    map:()=>["start","check","jbasic","jspec","jproj"] },
+    map:()=>["start","check","jbasic","jspec"]
+      .concat(S.jroute==="hardware"?["build","test"]:["build"])
+      .concat(["jproj","present"]) },
   ceo:{ t:"Innovator → CEO", m:"Ages 17+", min:17, max:null,
-    map:()=>["start","check"].concat(S.level==="ready"?[]:["found"]).concat(["track","build","market","revenue","ceo"]) },
-  founder:{ t:"CEO → Founder", m:"Advanced · monthly", min:17, max:null,
-    map:()=>["start","check","ceo","founder"] },
-  ecosystem:{ t:"Founder → Ecosystem", m:"After Founder", min:17, max:null,
-    map:()=>["founder","eco"] },
-  siwes:{ t:"SIWES / Internship", m:"Junior Staff · 5 days a week · monthly", min:17, max:null,
-    map:()=>["start","check"].concat(S.level==="ready"?[]:["found"]).concat(["track","build","market","revenue","ceo"]) }
+    map:()=>["start","check"].concat(S.level==="ready"?[]:["found"]).concat(["track","build","market","business","revenue","ceo"]) },
+  founder:{ t:"CEO → Founder", m:"₦100,000 / month", min:17, max:null,
+    map:()=>["ceo","product","marketing","sales","crm","finance","operations","workflows","automation","team","management","scale","founder"] },
+  ecosystem:{ t:"Founder → Ecosystem", m:"₦200,000 · proven revenue over ₦1,000,000", min:17, max:null,
+    map:()=>["proven","eco","expand","venture","build","management","scale"] },
+  siwes:{ t:"SIWES / Internship", m:"Junior Staff · 5 days · 8:00–3:00 · monthly", min:17, max:null,
+    map:()=>["start","check"].concat(S.level==="ready"?[]:["found"]).concat(["track","build","market","business","revenue","ceo"]) }
 };
 
 /* ---- tracks: problem / market / work / outcome / business ---- */
@@ -604,7 +623,11 @@ V.paths = () => ({ t:"Find my path", sub:"If you already know what you want.", h
     '</span><span class="t">'+esc(RT[k].t)+'<span class="m">'+esc(RT[k].m)+'</span></span><span class="go">→</span></button>'
   ).join("") +
   '<button class="row" onclick="app.open(\'tracks\')"><span class="n">06</span>'+
-  '<span class="t">Tracks<span class="m">Choose a capability directly</span></span><span class="go">→</span></button></div>' +
+  '<span class="t">Tracks<span class="m">Choose a capability directly</span></span><span class="go">→</span></button>'+
+  '<button class="row" onclick="app.open(\'partnership\')"><span class="n">07</span>'+
+  '<span class="t">Partner<span class="m">Build something together</span></span><span class="go">→</span></button>'+
+  '<button class="row" onclick="app.open(\'sponsorship\')"><span class="n">08</span>'+
+  '<span class="t">Sponsor<span class="m">Fund what comes next</span></span><span class="go">→</span></button></div>' +
   '<div class="note">Not sure? <button style="color:var(--gold)" onclick="app.open(\'guide\')">Guide me instead</button></div>' });
 
 /* ---- tracks ---- */
@@ -646,10 +669,12 @@ V.fees = () => ({ t:"Fees", sub:"Two payments, at two different moments.", h:
   '<div class="amt"><div class="l">Application<small>Once you decide to apply</small></div><div class="v now">'+N(FEE)+'</div></div>' +
   '<div class="amt"><div class="l">Programme<small>After your route is set</small></div><div class="v later">Separate</div></div>' +
   '<div class="note">Never combined. You are never asked for a programme fee before your route is set.</div>' +
-  facts([["Junior",N(25000)+" · "+N(40000)+" · "+N(130000)],
+  facts([["Junior",N(25000)+" Foundation · "+N(30000)+" Software · "+N(120000)+" Robotics"],
          ["Tracks",N(56000)+"–"+N(69000)],
          ["SIWES / Internship","1 month "+N(30000)+" · 2 months "+N(50000)+" · 3 months "+N(70000)],
-         ["Direct Internship",N(70000)+" per month"],
+         ["Direct Internship",N(70000)+" per month · 5 days · 8:00–3:00"],
+         ["CEO → Founder",N(100000)+" per month"],
+         ["Founder → Ecosystem",N(200000)+" · requires proven revenue over "+N(1000000)],
          ["Longer placements","Progression stays monthly. Each month is its own cycle."],
          ["Foundation","Set at review"]]) });
 
@@ -934,17 +959,21 @@ const prog = () => '<div class="prog">'+STEP.map((_,i)=>'<i class="'+(i<A.s?"don
 const acts = (b,n,l) => '<div class="actions">'+(b?'<button class="btn quiet" onclick="app.aBack()">Back</button>':"")
   + (n?'<button class="btn primary" onclick="'+n+'">'+(l||"Continue")+'</button>':"")+'</div>';
 
-function pickProg(v){ if(A.route==="siwes") A.siwes=v; else A.track=v; aStep(); }
+function pickProg(v){ if(A.route==="siwes") A.siwes=v; else { A.track=v; if(A.route==="junior") S.jroute=v; } aStep(); }
 function clearProg(){ if(A.route==="siwes") A.siwes=null; else A.track=null; aStep(); }
 function progLabel(){
-  if(A.route==="junior") return A.track==="hardware"?"Robotics / Hardware":A.track==="software"?"Software":"Programme fee";
+  if(A.route==="junior") return A.track==="hardware"?"Robotics":A.track==="software"?"Software":"Programme fee";
   if(A.route==="siwes") return A.siwes==="intern"?"Direct internship":A.siwes?("SIWES · "+A.siwes+" month"+(A.siwes==="1"?"":"s")):"Placement fee";
+  if(A.route==="founder") return "CEO → Founder";
+  if(A.route==="ecosystem") return "Founder → Ecosystem";
   return A.track&&trk(A.track)?trk(A.track).nm:"Programme fee";
 }
 function progFee(){
-  if(A.route==="junior") return A.track==="hardware"?N(130000):A.track==="software"?N(40000):"To be confirmed";
+  if(A.route==="junior") return A.track==="hardware"?N(120000):A.track==="software"?N(30000):"To be confirmed";
   if(A.route==="siwes"){ const m={"1":30000,"2":50000,"3":70000,"intern":70000}[A.siwes];
     return m?N(m)+(A.siwes==="intern"?" / month":""):"To be confirmed"; }
+  if(A.route==="founder") return N(100000)+" / month";
+  if(A.route==="ecosystem") return N(200000);
   return A.track&&trk(A.track)?N(trk(A.track).p):"To be confirmed";
 }
 
@@ -959,6 +988,17 @@ function applicationMessage(){
   L.push("Phone: "+(A.phone||"—"));
   L.push("Email: "+(A.email||"—"));
   L.push("Location: "+(A.location||"—"));
+  if(A.route==="junior"){
+    L.push("Date of birth: "+(A.dob||"—"));
+    L.push("School: "+(A.school||"—")+(A.cls?" · "+A.cls:""));
+    L.push("");
+    L.push("GUARDIAN");
+    L.push("Name: "+(A.gname||"—")+(A.grel?" ("+A.grel+")":""));
+    L.push("Phone: "+(A.gphone||"—"));
+    L.push("Email: "+(A.gemail||"—"));
+    L.push("Emergency: "+(A.gemergency||"—"));
+    L.push("Consent given: "+(A.consent?"Yes":"No"));
+  }
   if(S.age) L.push("Age: "+S.age);
   L.push("");
   L.push("Route: "+((RT[A.route]||{}).t||"—"));
@@ -1000,13 +1040,22 @@ function aStep(){
   case 2: /* YOUR PROGRAMME — chosen, and priced, before any money moves */
     {
       const opts = A.route==="junior"
-        ? [["software","Software",40000],["hardware","Robotics / Hardware",130000]]
+        ? [["software","Software",30000],["hardware","Robotics",120000]]
         : A.route==="siwes"
           ? [["1","SIWES · 1 month",30000],["2","SIWES · 2 months",50000],["3","SIWES · 3 months",70000],["intern","Direct internship · per month",70000]]
           : TR.map(t=>[t.id,t.nm,t.p]);
       const picked = A.route==="siwes" ? A.siwes : A.track;
       if(A.route==="founder"||A.route==="ecosystem"){
-        h += '<h2>No track is chosen here.</h2><div class="sub">This route is confirmed with you directly, and the fee is set at review.</div>'
+        const adv = A.route==="founder"
+          ? ["CEO → Founder", N(100000)+" per month", "You already run a business.", "Stop being the system. Build the system.", "Founder"]
+          : ["Founder → Ecosystem", N(200000), "Founder status and proven revenue over "+N(1000000)+".", "Expand, or build the next venture on what you already proved.", "Ecosystem"];
+        h += '<h2>'+esc(adv[0])+'</h2>'
+          + facts([["Why","No track is chosen here — this route works on the business you already have."],
+                   ["Required", esc(adv[2])],
+                   ["You will", esc(adv[3])],
+                   ["Next", esc(adv[4])],
+                   ["Price", "<b>"+adv[1]+"</b>"]])
+          + '<div class="note">This is not what you pay today. Today is the '+N(FEE)+' application fee.</div>'
           + acts(true,"app.aNext()");
       } else if(!picked){
         h += '<div class="q">Which programme?</div>'
@@ -1034,7 +1083,25 @@ function aStep(){
     }
     break;
 
-  case 3: /* BIO */
+  case 3: /* BIO — a minor's application carries guardian details and consent */
+    if(A.route==="junior"){
+      const fld=(k,l,t,ph)=>'<div class="field"><label for="f-'+k+'">'+l+'</label><input id="f-'+k+'" type="'+(t||"text")+'"'+
+        (ph?' placeholder="'+ph+'"':'')+' value="'+esc(A[k]||"")+'"><div class="err" id="e-'+k+'"></div></div>';
+      h += '<div class="label">Applicant</div>'
+        + fld("name","Full name") + fld("dob","Date of birth","date")
+        + fld("school","School") + fld("cls","Class") + fld("location","Location")
+        + fld("interests","Interests")
+        + '<div class="label" style="margin-top:34px">Parent or guardian</div>'
+        + fld("gname","Full name") + fld("grel","Relationship","text","Parent, guardian…")
+        + fld("gphone","Phone","tel") + fld("gemail","Email","email")
+        + fld("gemergency","Emergency contact","tel")
+        + '<div class="field" style="margin-top:22px"><label style="display:flex;gap:14px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:14.5px;color:var(--muted);font-weight:400;min-height:48px;padding:12px 0;cursor:pointer">'
+        + '<input type="checkbox" id="f-consent" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px;accent-color:var(--orange)"'+(A.consent?" checked":"")+'>'
+        + '<span>I am the parent or guardian and I consent to this application.</span></label>'
+        + '<div class="err" id="e-consent"></div></div>'
+        + acts(true,"app.aNext()");
+      break;
+    }
     h += ['name|Name|text','email|Email|email','phone|Phone|tel','location|Location|text']
       .map(fd=>{const [k,l,t]=fd.split("|");
         return '<div class="field"><label for="f-'+k+'">'+l+'</label><input id="f-'+k+'" type="'+t+'" value="'+esc(A[k]||"")+'"><div class="err" id="e-'+k+'"></div></div>';}).join("")
@@ -1123,6 +1190,23 @@ function setErr(id,m){ const i=$("#f-"+id),e=$("#e-"+id); if(e)e.textContent=m||
 function aNext(){
   if(A.s===2 && A.route!=="founder" && A.route!=="ecosystem"
      && !(A.route==="siwes"?A.siwes:A.track)) return;
+  if(A.s===3 && A.route==="junior"){
+    ["name","dob","school","cls","location","interests","gname","grel","gphone","gemail","gemergency"]
+      .forEach(k=>{ const el=$("#f-"+k); if(el) A[k]=el.value.trim(); });
+    A.consent = $("#f-consent") ? $("#f-consent").checked : false;
+    let ok=true;
+    ok = setErr("name", A.name.length<2?"The applicant's name.":"") && ok;
+    ok = setErr("dob", A.dob?"":"Date of birth.") && ok;
+    ok = setErr("school", A.school.length<2?"School name.":"") && ok;
+    ok = setErr("gname", A.gname.length<2?"Parent or guardian name.":"") && ok;
+    ok = setErr("gphone", A.gphone.replace(/\D/g,"").length<7?"A reachable number.":"") && ok;
+    ok = setErr("gemail", /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(A.gemail)?"":"A valid email.") && ok;
+    ok = setErr("gemergency", A.gemergency.replace(/\D/g,"").length<7?"An emergency number.":"") && ok;
+    ok = setErr("consent", A.consent?"":"Guardian consent is required.") && ok;
+    if(!ok) return;
+    A.email = A.gemail; A.phone = A.gphone;   /* we contact the guardian */
+    A.s++; aStep(); return;
+  }
   if(A.s===3){                       /* bio moved to step 3 when the programme step was inserted */
     A.name=$("#f-name").value.trim(); A.email=$("#f-email").value.trim();
     A.phone=$("#f-phone").value.trim(); A.location=$("#f-location").value.trim();
@@ -1228,22 +1312,68 @@ function paint(){
 }
 
 /* --- partnership / sponsorship --- */
-V.partnership = () => ({ t:"Partnership", sub:"Build something together.", h:
-  '<div class="journey"><div class="jline"></div>'+["Discover","Discuss","Design","Agree","Activate","Measure"]
-    .map((s,i)=>'<div class="jnode'+(i===5?" on":"")+'"><span class="dot"><i></i></span><span class="txt"><span class="nm">'+s+'</span></span></div>').join("")+'</div>'+
-  facts([["Who","Organisations building with us, not just sponsoring."],["We need","What you do, what you want, what you bring."],["You get","A defined arrangement with agreed measures."]])+
-  '<button class="btn primary" style="margin-top:26px" onclick="app.toast(\'Connect a contact channel to enable this\')">Start a conversation</button>' });
-V.sponsorship = () => ({ t:"Sponsorship", sub:"Fund a participant.", h:
-  '<div class="journey"><div class="jline"></div>'+["Support","Follow","See","Measure","Continue"]
-    .map((s,i)=>'<div class="jnode'+(i===4?" on":"")+'"><span class="dot"><i></i></span><span class="txt"><span class="nm">'+s+'</span></span></div>').join("")+'</div>'+
-  facts([["Who","Individuals and organisations funding participation."],["You get","The evidence your support produced."],["Privacy","Shared only with participant consent."]])+
-  '<button class="btn primary" style="margin-top:26px" onclick="app.toast(\'Connect a contact channel to enable this\')">Discuss sponsorship</button>' });
+V.partnership = () => ({ t:"Partner", sub:"What can we build together?", h:
+  '<div class="journey"><div class="jline"></div>'+["Introduce","Understand","Match","Propose","Build","Measure"]
+    .map((x,i)=>'<div class="jnode'+(i===5?" on":"")+'"><span class="dot"><i></i></span><span class="txt"><span class="nm">'+x+'</span></span></div>').join("")+'</div>' +
+  facts([["Who","Schools, organisations, companies, training and technology partners, community groups."],
+         ["We need","What you do, why you want to partner, what you bring, what you want from us."],
+         ["You get","A defined arrangement with an agreed outcome and a way to measure it."]]) +
+  '<div class="actions"><button class="btn primary" onclick="app.open(\'partner-form\')">Start a partnership request</button></div>' });
+
+V.sponsorship = () => ({ t:"Sponsor", sub:"Help build what comes next.", h:
+  '<div class="journey"><div class="jline"></div>'+["Choose impact","Define support","Connect","Agree","Support","Report"]
+    .map((x,i)=>'<div class="jnode'+(i===5?" on":"")+'"><span class="dot"><i></i></span><span class="txt"><span class="nm">'+x+'</span></span></div>').join("")+'</div>' +
+  facts([["Who","Individuals, businesses, foundations and institutions."],
+         ["You choose","Junior innovation, digital skills, technology, entrepreneurship, equipment, scholarships or projects."],
+         ["You see","Where your support went, what was built, who benefited, what changed."]]) +
+  '<div class="note">Reported through the Treasury, so support is a public record rather than a private claim.</div>' +
+  '<div class="actions"><button class="btn primary" onclick="app.open(\'sponsor-form\')">Discuss sponsorship</button></div>' });
+
+/* Both enquiries leave as a WhatsApp message — the same honest route as an application. */
+const PF = {};
+const efield = (k,l,ph) => '<div class="field"><label for="pf-'+k+'">'+l+'</label>'+
+  '<input id="pf-'+k+'"'+(ph?' placeholder="'+ph+'"':'')+' value="'+esc(PF[k]||"")+'"><div class="err" id="pe-'+k+'"></div></div>';
+
+V["partner-form"] = () => ({ t:"Partnership request", h:
+  efield("org","Organisation") + efield("contact","Contact name") + efield("phone","Phone") +
+  efield("email","Email") + efield("does","What your organisation does") +
+  efield("why","Why you want to partner") + efield("bring","What you can contribute") +
+  efield("want","What you want Hamzury to provide") + efield("outcome","Expected outcome") +
+  '<div class="actions"><button class="btn primary" onclick="app.sendEnquiry(\'partner\')">Send request</button></div>' +
+  '<div class="note">This opens WhatsApp with your details filled in. Nothing is stored on this site.</div>' });
+
+V["sponsor-form"] = () => ({ t:"Sponsorship", h:
+  '<div class="field"><label for="pf-area">What you want to support</label><select id="pf-area">' +
+    ["Junior innovation","Digital skills","Technology","Entrepreneurship","Equipment","Scholarships","Projects"]
+    .map(x=>'<option'+(PF.area===x?" selected":"")+'>'+x+'</option>').join("")+'</select></div>' +
+  efield("org","Name or organisation") + efield("phone","Phone") + efield("email","Email") +
+  efield("support","What you would like to give") + efield("report","What you want reported back") +
+  '<div class="actions"><button class="btn primary" onclick="app.sendEnquiry(\'sponsor\')">Send</button></div>' +
+  '<div class="note">This opens WhatsApp with your details filled in. Nothing is stored on this site.</div>' });
+
+function sendEnquiry(kind){
+  ["org","contact","phone","email","does","why","bring","want","outcome","support","report"]
+    .forEach(k=>{ const el=$("#pf-"+k); if(el) PF[k]=el.value.trim(); });
+  const sel=$("#pf-area"); if(sel) PF.area=sel.value;
+  if(!PF.org){ const e=$("#pe-org"); if(e) e.textContent="Required."; return; }
+  if(!PF.phone){ const e=$("#pe-phone"); if(e) e.textContent="Required."; return; }
+  const L = kind==="partner"
+    ? ["HAMZURY PARTNERSHIP REQUEST","","Organisation: "+PF.org,"Contact: "+(PF.contact||"—"),
+       "Phone: "+PF.phone,"Email: "+(PF.email||"—"),"","What they do: "+(PF.does||"—"),
+       "Why partner: "+(PF.why||"—"),"They bring: "+(PF.bring||"—"),
+       "They want: "+(PF.want||"—"),"Expected outcome: "+(PF.outcome||"—")]
+    : ["HAMZURY SPONSORSHIP","","Name: "+PF.org,"Phone: "+PF.phone,"Email: "+(PF.email||"—"),
+       "","Impact area: "+(PF.area||"—"),"Support offered: "+(PF.support||"—"),
+       "Wants reported: "+(PF.report||"—")];
+  window.open("https://wa.me/234"+WHATSAPP.replace(/^0/,"")+"?text="+encodeURIComponent(L.join("\n")),"_blank","noopener");
+  toast("Opening WhatsApp");
+}
 
 paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
          setRoute, setTrack, chk, copyRef, finishApp,
-  rsCheck, rsPick, rsSubmit, rsReset, rsGate, rsSetRef, rsPickBack, pickProg, clearProg,
+  rsCheck, rsPick, rsSubmit, rsReset, rsGate, rsSetRef, rsPickBack, pickProg, clearProg, sendEnquiry,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
