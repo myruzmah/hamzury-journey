@@ -176,6 +176,8 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut) 40px}
 .opt .mark{color:var(--dim);font-size:15px;transition:.25s}
 .opt:hover .mark{color:var(--orange);transform:translateX(4px)}
 .opt[aria-pressed="true"] .mark{color:var(--orange)}
+.opt.on{background:linear-gradient(90deg,rgba(242,101,42,.10),transparent);padding-left:16px}
+.opt.on .mark{color:var(--orange)}
 .opt:disabled{opacity:.35;cursor:not-allowed}
 .opt:disabled:hover{padding-left:6px;background:none}
 .opt small{display:block;color:var(--dim);font-size:12.5px;margin-top:4px}
@@ -246,11 +248,20 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut) 40px}
 
 /* values table — plain, no boasting */
 .values{width:100%;border-collapse:collapse;margin:34px 0 30px;font-size:14.5px}
+.vtoggle{display:none;align-items:center;justify-content:space-between;width:100%;
+  margin:26px 0 0;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  font-size:14px;color:var(--ink);min-height:52px}
+.vtoggle .chev{color:var(--gold);transition:transform .25s var(--ease)}
+.vtoggle[aria-expanded="true"] .chev{transform:rotate(90deg)}
 .values td{padding:13px 0;border-bottom:1px solid var(--line);vertical-align:top}
 .values .vk{font-weight:600;width:26%;padding-right:16px}
 .values .vy{color:var(--ink);width:40%;padding-right:16px}
 .values .vn{color:var(--dim)}
 @media (max-width:640px){
+  /* collapsed by default on a phone; tapping the heading slides it open */
+  .values{display:none}
+  .values.open{display:table}
+  .vtoggle{display:flex}
   .values td{display:block;border-bottom:0;padding:2px 0}
   .values .vk{width:auto;color:var(--gold);font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding-top:16px}
   .values .vy{width:auto}
@@ -317,7 +328,7 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut) 40px}
     <div class="label">Our philosophy</div>
     <h2 style="margin-top:16px">Business is built.<span>Not attended.</span></h2>
     <div class="flow" id="stance-flow"></div>
-    <table class="values" id="values"></table>
+    <button class="vtoggle" id="vtoggle" aria-expanded="false" onclick="app.toggleValues()"><span>What we mean by that</span><span class="chev">›</span></button><table class="values" id="values"></table>
     <p class="core">You do not learn everything first. <em>You learn what works, then use it.</em></p>
   </section>
 
@@ -417,85 +428,99 @@ const TR = [
     market:"Any business with sales, stock or customer records.",
     work:"Dashboards, reports and decision briefs from real records.",
     out:"Turn a company's own data into decisions it can act on.",
-    biz:"Monthly reporting retainer or one-off analysis." },
+    biz:"Monthly reporting retainer or one-off analysis.",
+    fit:"For people who notice patterns and want to know why the numbers moved." },
   { id:"automation", nm:"AI Automation Agency", p:64000,
     prob:"Manual work repeats until it breaks.",
     market:"Operations-heavy businesses with repetitive processes.",
     work:"Workflows and automations that run without supervision.",
     out:"Remove hours of manual work from a business.",
-    biz:"Build fee plus maintenance, or retained support." },
+    biz:"Build fee plus maintenance, or retained support.",
+    fit:"For people who cannot stand doing the same thing twice." },
   { id:"assistant", nm:"AI Executive Assistant", p:59000,
     prob:"Leaders lose hours to work beneath them.",
     market:"Founders, executives and small leadership teams.",
     work:"Research, documentation, reporting and communication systems.",
     out:"Multiply an executive's output without adding headcount.",
-    biz:"Monthly retainer or fractional support." },
+    biz:"Monthly retainer or fractional support.",
+    fit:"For organised people who like keeping someone else effective." },
   { id:"brand", nm:"AI Brand & Positioning", p:59000,
     prob:"Good businesses lose to clearer ones.",
     market:"Businesses with a real offer and unclear positioning.",
     work:"Positioning, messaging and the content that carries it.",
     out:"Make a business understood and chosen.",
-    biz:"Brand project or retained brand support." },
+    biz:"Brand project or retained brand support.",
+    fit:"For people with taste who can explain why something matters." },
   { id:"revenue", nm:"AI Revenue & Systems Closer", p:64000,
     prob:"Interest arrives, then disappears.",
     market:"Businesses with enquiries and no follow-up system.",
     work:"Offer, follow-up, WhatsApp systems, CRM and tracking.",
     out:"Turn enquiries into closed business, on record.",
-    biz:"System build fee or retained sales operations." },
+    biz:"System build fee or retained sales operations.",
+    fit:"For people who are comfortable asking for the decision." },
   { id:"startup", nm:"AI Startup Architect", p:64000,
     prob:"Ideas fail on structure, not effort.",
     market:"Founders and teams at the idea stage.",
     work:"Validation, business model, product spec and an MVP.",
     out:"Take an idea to something real and tested.",
-    biz:"Venture build or product consulting." },
+    biz:"Venture build or product consulting.",
+    fit:"For people with an idea they are tired of only talking about." },
   { id:"agentic", nm:"Agentic AI Engineer", p:69000,
     prob:"Multi-step work is where AI fails.",
     market:"Businesses whose processes span several systems.",
     work:"AI agents and agentic workflows that hold up under load.",
     out:"Build agents that complete real multi-step work.",
-    biz:"Build and maintain, or technical consulting." },
+    biz:"Build and maintain, or technical consulting.",
+    fit:"For technical people who want AI to do real multi-step work." },
   { id:"media", nm:"AI Media & Faceless Agency", p:59000,
     prob:"Attention starts, then stops.",
     market:"Businesses needing visibility without a media team.",
     work:"Content systems, production workflows and distribution.",
     out:"Keep a business visible without burning out.",
-    biz:"Monthly content retainer or channel management." },
+    biz:"Monthly content retainer or channel management.",
+    fit:"For people who can make things worth watching, consistently." },
   { id:"industry", nm:"Industry AI Transformer", p:64000,
     prob:"Traditional industry is largely untouched.",
     market:"Agriculture, transport, trade, construction, health, education.",
     work:"One operational problem, analysed and solved with technology.",
     out:"Modernise a real operation in a traditional sector.",
-    biz:"Transformation project or sector consulting." },
+    biz:"Transformation project or sector consulting.",
+    fit:"For people who know a trade and can see what is broken in it." },
   { id:"wealth", nm:"AI Wealth & Compliance", p:59000,
     prob:"Disorder costs more than competition.",
     market:"Businesses formalising their money and filing.",
     work:"Compliance calendars, financial workflows and record systems.",
     out:"Put a business in order and keep it there.",
-    biz:"System setup or ongoing compliance support." },
+    biz:"System setup or ongoing compliance support.",
+    fit:"For careful people who bring order to money and records." },
   { id:"web", nm:"Website Design & Development", p:56000,
     prob:"Most businesses have no working front door.",
     market:"Any business that needs to be found and trusted online.",
     work:"Designed, built and deployed websites that convert.",
     out:"Ship a working site a business can rely on.",
-    biz:"Build fee plus hosting, care and iteration." },
+    biz:"Build fee plus hosting, care and iteration.",
+    fit:"For people who want to build the thing a business is judged by." },
   { id:"software", nm:"Software & App Development", p:56000,
     prob:"Off-the-shelf tools rarely fit the actual process.",
     market:"Businesses outgrowing spreadsheets and manual systems.",
     work:"Applications built to a real specification and shipped.",
     out:"Build software people actually use.",
-    biz:"Project build, or product with recurring licensing." },
+    biz:"Project build, or product with recurring licensing.",
+    fit:"For people who want to build the tool, not just use it." },
   { id:"cyber", nm:"Cybersecurity", p:70000,
     prob:"Most businesses only think about security after the loss.",
     market:"Any business holding money, customer records or accounts.",
     work:"Assessments, hardening, monitoring and incident response practice.",
     out:"Find the weakness before someone else does.",
-    biz:"Security audit, retained monitoring, or incident support." },
+    biz:"Security audit, retained monitoring, or incident support.",
+    fit:"For people who think about how things break before they do." },
   { id:"product", nm:"Product Design", p:59000,
     prob:"People abandon products that are confusing, not products that are ugly.",
     market:"Anyone building an app, a site or a service people must use.",
     work:"Research, flows, wireframes, interface design and testing.",
     out:"Design something people can actually use without being taught.",
-    biz:"Design project, retained product partner, or design system build." }
+    biz:"Design project, retained product partner, or design system build.",
+    fit:"For people who care that something is easy to use, not just pretty." }
 ];
 const trk = id => TR.find(t=>t.id===id);
 
@@ -556,15 +581,15 @@ const QID = id => QP.find(q=>q.id===id);
 /* The order differs by route. SIWES chooses work and is assessed before money is
    mentioned; Junior pays the application fee first, then chooses and is assessed. */
 const FLOW = {
-  /* One spine for everyone: identify → application fee → choose → assess →
-     programme fee → receipt → slip. The ₦5,000 always precedes any choice. */
-  DEFAULT: ["details","fee","paid","programme","check","progfee","receipt","print"]
+  /* Understand → identify → pay → choose → be assessed → pay → slip.
+     Nothing is chosen before the ₦5,000, and no receipt step is optional. */
+  DEFAULT: ["edu","details","fee","bridge","programme","requirement","check","progfee","slip"]
 };
 const flow = () => FLOW[A.route] || FLOW.DEFAULT;
 const stepId = () => flow()[A.s];
-const STEP_LABEL = { details:"Your details", fee:"Application fee", paid:"Confirm payment",
-  programme:"Your programme", check:"Your level", progfee:"Programme fee",
-  receipt:"Upload receipt", print:"Your slip" };
+const STEP_LABEL = { edu:"Before you apply", details:"Your details", fee:"Application fee",
+  bridge:"Your programme", programme:"Your programme", requirement:"Requirement",
+  check:"Your level", progfee:"Programme fee", slip:"Your slip" };
 const BANK = { bank:"Moniepoint", name:"Hamzury Mainstream Ltd", acct:"82025158500" };
 const WHATSAPP = "08067149356";
 /* Staff door code. Change this before anyone outside the team has the link. */
@@ -672,34 +697,27 @@ Object.keys(ND).forEach(id=>{
    Same five everywhere, answered differently per route, so nobody
    arrives thinking they bought a course. ---- */
 const EDU = {
-  junior: ["Ages 13–16. A parent or guardian applies, and answers the level check about the child.",
-           "Foundation first if the basics are missing, then Software or Robotics.",
-           "Three days a week. Your child builds something real and presents it.",
-           "Not lessons. Capability, a finished project, then hackathons and opportunities.",
-           "Basic Foundation "+"₦25,000"+", then Software ₦30,000 or Robotics ₦120,000."],
-  ceo:    ["17+. The level check decides whether you start at Foundation or your track.",
-           "One track, taken all the way to a business that can trade.",
-           "Three days a week. Build, market, business, revenue.",
-           "You do not leave saying \"I learned a skill\". You leave operating something.",
-           "Track fees ₦56,000–₦70,000. Foundation is set at review."],
-  founder:["You already run a business that works.",
-           "Assessed on landing page, lead magnet, revenue and the problem you solve.",
-           "Monthly. Each month has its own achievement.",
-           "Partnerships, grants and growth — not another course.",
-           "₦100,000 per month."],
-  ecosystem:["Proven revenue over ₦1,000,000 — built with us or on your own.",
-           "You report your stage and impact; we accept the evidence.",
-           "Ongoing, month by month.",
-           "At least three departments behind you: HR, Finance and Growth.",
-           "₦200,000."],
-  siwes:  ["17+ with a placement. School documentation is verified.",
-           "Your level decides where you enter — you do not restart at zero.",
-           "Five days a week, 8:00–3:00, as Junior Staff on real work.",
-           "You work and progress at the same time. Contribution can qualify for a percentage.",
-           "1 month ₦30,000 · 2 months ₦50,000 · 3 months ₦70,000. Direct internship ₦70,000/month."]
+  junior:[
+    ["Your child is assessed, not enrolled.","You apply as the parent or guardian, and answer a few questions about your child. Those answers decide where they begin — you do not choose it."],
+    ["Three days a week, building.","Not lessons and notes. Your child makes something real, and stands up and presents it."],
+    ["It ends with a project, not a certificate.","After that come hackathons and opportunities."]],
+  ceo:[
+    ["You are placed, not enrolled.","A short check decides whether you start at Foundation or go straight to your track."],
+    ["Three days a week, month by month.","Build, market, customer, revenue. Each month has one achievement to hit."],
+    ["You leave operating something.","Not \"I learned a skill\" — a business that can take a customer and issue an invoice."]],
+  siwes:[
+    ["You work here. You are not a visitor.","Junior staff, five days a week, 8:00 to 3:00, on real Hamzury work."],
+    ["Your level decides where you enter.","You do not restart at zero because you came through a placement. School documentation is verified."],
+    ["You progress while you work.","Your own project runs alongside the job. Contribution can qualify for a percentage."]],
+  founder:[
+    ["This is for a business that already works.","Not an idea. Something with customers and revenue you can point at."],
+    ["We look at what you already have.","Your landing page, what brings people in, your revenue, and whether you can state the problem in one sentence."],
+    ["It is growth, not systems.","Partnerships, grants, and the things that take the business past you."]],
+  ecosystem:[
+    ["You may have built it without us.","If the evidence is there, that counts. We accept what you proved on your own."],
+    ["You report your stage and impact.","That is the entry. It is not an exam."],
+    ["Three departments stand behind you.","HR, Finance and Growth, at minimum."]]
 };
-const EDU_LABEL = ["Who it is for","Where you start","When you are expected","What you are really building","What it costs"];
-
 /* Where this stage sits against the rest — so nothing reads as a standalone course. */
 const LADDER = [
   ["junior",   "Junior Innovator",   "Capability"],
@@ -719,20 +737,9 @@ function relate(k){
   const note = k==="siwes"
     ? "SIWES and internships are not a separate ladder. You join the professional journey at the level your capability supports."
     : "Each stage feeds the next. You do not repeat what you have already proved.";
-  return '<div class="label" style="margin:36px 0 10px">How this fits</div>'
+  return '<div class="label" style="margin:32px 0 10px">How this fits</div>'
     + '<div class="index">'+rows+'</div>'
     + '<div class="note">'+note+'</div>';
-}
-function educate(k, extra){
-  const e = EDU[k]; if(!e) return "";
-  return '<div class="label" style="margin:36px 0 4px">Before you apply</div>'
-    + '<p class="tiny" style="margin:0 0 14px">Apply now and your resumption is '+nextIntake()+'.</p>'
-    + '<div class="journey"><div class="jline"></div>'
-    + e.map((txt,i)=>'<div class="jnode'+(i===e.length-1?" on":"")+'"><span class="dot"><i></i></span>'
-        + '<span class="txt"><span class="nm">'+esc(EDU_LABEL[i])+'</span>'
-        + '<span class="hint">'+esc(txt)+'</span></span></div>').join("")
-    + '</div>'
-    + (extra||"");
 }
 
 Object.keys(RT).forEach(k=>{
@@ -741,7 +748,7 @@ Object.keys(RT).forEach(k=>{
     const start = S.level==="needs" ? (k==="junior"?"jbasic":"found") : null;
     return { t:r.t, sub:r.m, h:
       jmap(r.map(), start) +
-      educate(k) + relate(k) +
+      relate(k) +
       (S.level===null ? '<div class="note">We check your level before you start. You are never asked to choose Foundation.</div>' : "") +
       '<div class="actions"><button class="btn primary" onclick="app.startApp(\''+k+'\')">Apply</button>'+
       '<button class="btn quiet" onclick="app.open(\'paths\')">Other routes</button></div>' };
@@ -797,7 +804,7 @@ TR.forEach(t=>{
     '<div class="label" style="margin:36px 0 4px">The journey</div>' +
     jmap(["track","build","market","revenue","ceo"],"track") +
     '<div class="amt" style="margin-top:26px"><div class="l">Track fee<small>Separate from the '+N(FEE)+' application fee</small></div><div class="v now">'+N(t.p)+'</div></div>' +
-    educate("ceo") + relate("ceo") +
+    relate("ceo") +
     '<div class="actions"><button class="btn primary" onclick="app.startApp(\'ceo\',\''+t.id+'\')">Apply</button>'+
     '<button class="btn quiet" onclick="app.open(\'tracks\')">Other programmes</button></div>' });
 });
@@ -1079,6 +1086,17 @@ function aStep(){
   let h = prog();
   switch(stepId()){
 
+  case "edu": {
+    const set = EDU[A.route] || EDU.ceo;
+    const e = set[A.ei] || set[0];
+    h += '<h2 style="margin-bottom:10px">'+esc(e[0])+'</h2>'
+      + '<div class="sub">'+esc(e[1])+'</div>'
+      + '<p class="tiny" style="margin-top:26px">Apply now and your resumption is '+nextIntake()+'.</p>'
+      + '<div class="actions">'
+      + (A.ei>0?'<button class="btn quiet" onclick="app.aBack()">Back</button>':'')
+      + '<button class="btn primary" onclick="app.aNext()">'+(A.ei<set.length-1?"Next":"Start")+'</button></div>';
+    break; }
+
   case "details":
     if(A.route==="junior"){
       const fld=(k,l,t,ph)=>'<div class="field"><label for="f-'+k+'">'+l+'</label><input id="f-'+k+'" type="'+(t||"text")+'"'+
@@ -1094,75 +1112,73 @@ function aStep(){
         + '<input type="checkbox" id="f-consent" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px;accent-color:var(--orange)"'+(A.consent?" checked":"")+'>'
         + '<span>I am the parent or guardian and I consent to this application.</span></label>'
         + '<div class="err" id="e-consent"></div></div>'
-        + acts(false,"app.aNext()");
+        + acts(true,"app.aNext()");
       break;
     }
     h += '<h2 style="margin-bottom:22px">'+esc(r?r.t:"Application")+'</h2>'
       + ['name|Name|text','email|Email|email','phone|Phone|tel','location|Location|text']
       .map(fd=>{const [k,l,t]=fd.split("|");
         return '<div class="field"><label for="f-'+k+'">'+l+'</label><input id="f-'+k+'" type="'+t+'" value="'+esc(A[k]||"")+'"><div class="err" id="e-'+k+'"></div></div>';}).join("")
-      + acts(false,"app.aNext()");
+      + acts(true,"app.aNext()");
     break;
 
   case "fee":
+    /* Payment and proof on one page. Nothing advances without the receipt. */
     h += '<div class="big">'+N(FEE)+'</div>'
       + '<div class="sub" style="margin-top:14px">Application fee. Separate from any programme fee, and it does not guarantee admission.</div>'
       + '<div class="pay">' + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
         + payRow("Account number", BANK.acct) + payRow("Amount", N(FEE))
         + payRow("Use as narration", esc(A.name||"Your full name")) + '</div>'
-      + '<div class="note">Transfer '+N(FEE)+', then continue. Your reference is issued once you confirm.</div>'
+      + '<label class="drop" for="rc" style="margin-top:22px">'
+        + (A.receipt?"Receipt attached — tap to replace":"Upload your receipt")+'</label>'
+      + '<input id="rc" type="file" accept="image/*,application/pdf" style="display:none" onchange="app.takeReceipt(this)">'
+      + (A.receipt?'<img class="receiptimg" src="'+A.receipt+'" alt="Receipt">':'')
+      + '<div class="err" id="e-receipt"></div>'
       + acts(true,"app.aNext()","I have paid");
     break;
 
-  case "paid":
-    if(!A.ref) A.ref = mkRef();
-    h = '<div class="label accent">Application fee recorded</div>'
-      + '<h2 style="margin:12px 0 6px">'+esc(A.ref)+'</h2>'
-      + '<div class="sub">This is your reference. Quote it on every payment and message from now on.</div>'
-      + '<div class="note">Next you choose your programme, and we check where you start.</div>'
-      + '<div class="actions"><button class="btn quiet" onclick="app.copyRef()">Copy reference</button>'
-      + '<button class="btn primary" onclick="app.aNext()">Continue</button></div>';
+  case "bridge":
+    h = '<div class="label accent">Application fee received</div>'
+      + '<h2 style="margin:12px 0 8px">Now choose what you will build on.</h2>'
+      + '<div class="sub">The next step is the programme your business is built around. Then we check where you start.</div>'
+      + '<div class="actions"><button class="btn quiet" onclick="app.aBack()">Back</button>'
+      + '<button class="btn primary" onclick="app.aNext()">Next</button></div>';
     break;
 
   case "programme": {
     if(A.route==="founder"||A.route==="ecosystem"){
       const adv = A.route==="founder"
-        ? ["CEO → Founder", N(100000)+" per month", "A business that already works.",
-           "Build partnerships, grants and the growth that takes the business past you.", "Founder"]
-        : ["Founder → Ecosystem", N(200000),
-           "Proven revenue over "+N(1000000)+" — built with us or on your own.",
-           "Report your stage and impact, and draw on at least three departments: HR, Finance and Growth.", "Ecosystem"];
-      h += '<h2>'+esc(adv[0])+'</h2>'
-        + facts([["Why","This route works on the business you already have."],
-                 ["Required", esc(adv[2])],["You will", esc(adv[3])],["Next", esc(adv[4])],
-                 ["Programme fee", "<b>"+adv[1]+"</b>"]])
-        + '<div class="note">Separate from the '+N(FEE)+' you have already paid.</div>'
+        ? ["CEO → Founder", N(100000)+" per month","Partnerships, grants and the growth that takes the business past you."]
+        : ["Founder → Ecosystem", N(200000),"Report your stage and impact, with HR, Finance and Growth behind you."];
+      h += '<h2>'+esc(adv[0])+'</h2><div class="sub" style="margin-top:8px">'+esc(adv[2])+'</div>'
+        + '<div class="amt" style="margin-top:24px"><div class="l">Programme fee</div><div class="v now">'+adv[1]+'</div></div>'
         + acts(true,"app.aNext()");
       break;
     }
     const opts = A.route==="junior"
-      ? [["software","Software",30000],["hardware","Robotics",120000]]
-      : TR.map(t=>[t.id,t.nm,t.p]);
-    if(!A.track){
-      h += '<div class="q">'+(A.route==="junior"?"Which route for your child?":"Which programme?")+'</div>'
-        + (A.route==="junior"?'<div class="note">If the check shows Basic Foundation is needed, that comes first.</div>':"")
-        + '<div class="opts">' + opts.map(o=>
-            '<button class="opt" onclick="app.pickProg(\''+o[0]+'\')"><span>'+esc(o[1])+
-            '</span><span class="mark">'+N(o[2])+'</span></button>').join("") + '</div>'
-        + acts(true,null);
-      break;
-    }
-    const o = opts.find(x=>x[0]===A.track) || opts[0];
-    const t = A.route!=="junior" ? trk(A.track) : null;
-    h += '<h2>'+esc(o[1])+'</h2>'
-      + facts([["Why", t?esc(t.prob):"Build real capability before commercial pressure."],
-               ["Required","The check comes next."],
-               ["You will", t?esc(t.work):"Build, make a project, present it — then hackathons and opportunities."],
-               ["Next", t?esc(t.out):"Projects, hackathons and opportunities."],
-               ["Programme fee","<b>"+N(o[2])+"</b>"]])
-      + '<div class="note">Separate from the '+N(FEE)+' you have already paid.</div>'
-      + '<div class="actions"><button class="btn quiet" onclick="app.clearProg()">Change</button>'
-      + '<button class="btn primary" onclick="app.aNext()">Continue</button></div>';
+      ? [["software","Software",30000,"For a child who likes making things happen on a screen."],
+         ["hardware","Robotics",120000,"For a child who likes building things they can hold."]]
+      : TR.map(t=>[t.id,t.nm,t.p,t.fit]);
+    h += '<div class="q">'+(A.route==="junior"?"Which route for your child?":"Which programme?")+'</div>'
+      + '<div class="opts">' + opts.map(o=>
+          '<button class="opt'+(A.track===o[0]?" on":"")+'" onclick="app.pickProg(\''+o[0]+'\')">'
+          + '<span>'+esc(o[1])+'<small>'+esc(o[3])+'</small></span>'
+          + '<span class="mark">'+N(o[2])+'</span></button>').join("") + '</div>'
+      + '<div class="actions"><button class="btn quiet" onclick="app.aBack()">Back</button>'
+      + (A.track?'<button class="btn primary" onclick="app.aNext()">Continue</button>':'')+'</div>';
+    break; }
+
+  case "requirement": {
+    const nm = A.route==="junior"
+      ? (A.track==="hardware"?"Robotics":"Software")
+      : (trk(A.track)?trk(A.track).nm:"This programme");
+    h = '<div class="label accent">'+esc(nm)+'</div>'
+      + '<h2 style="margin:12px 0 8px">There is a requirement.</h2>'
+      + '<div class="sub">'+(A.route==="junior"
+          ? "Before your child starts this route, the digital basics have to be in place. A few questions decide it."
+          : "Before you start this programme, the digital foundation has to be in place. A few questions decide it.")+'</div>'
+      + '<div class="actions"><button class="btn quiet" onclick="app.aBack()">Back</button>'
+      + '<button class="btn primary" onclick="app.aNext()">Answer them</button></div>';
     break; }
 
   case "check": {
@@ -1177,55 +1193,50 @@ function aStep(){
     }
     S.level = A.chk >= 1 ? "ready" : "needs";
     const due = progDue();
-    h += '<h2>'+(A.route==="junior"
-          ? (S.level==="needs" ? "Start with Basic Foundation." : "Ready for "+(A.track==="hardware"?"Robotics":"Software")+".")
-          : (S.level==="needs" ? "You start at Foundation." : "You are ready for your track."))+'</h2>'
-      + '<div class="sub">'+(A.route==="junior"
-          ? (S.level==="needs"
-              ? "The answers show the digital basics are not in place yet. Basic Foundation builds them in one month, then the specialist route follows."
-              : "The basics are in place, so your child goes straight to the specialist route.")
-          : (S.level==="needs"
-              ? "Foundation is one month, and it is the shortest route to your track. Nothing is lost."
-              : "The check cleared the requirement."))+'</div>'
-      + jmap(RT[A.route].map(), S.level==="needs"?(A.route==="junior"?"jbasic":"found"):"track")
+    h += '<h2>'+(S.level==="needs"
+          ? (A.route==="junior" ? "Start with Basic Foundation." : "You start at Foundation.")
+          : "You are ready.")+'</h2>'
+      + '<div class="sub">'+(S.level==="needs"
+          ? (A.route==="junior"
+              ? "The basics are not in place yet. Basic Foundation builds them in one month, then the route you chose follows."
+              : "Foundation is one month, and it is the shortest way to the programme you chose. Nothing is lost.")
+          : "The requirement is met. You go straight to what you chose.")+'</div>'
       + '<div class="actions"><button class="btn quiet" onclick="app.aBack()">Back</button>'
-      + '<button class="btn primary" onclick="app.aNext()">'+(due[1]?("Pay for "+due[0]):"Continue")+'</button></div>';
+      + '<button class="btn primary" onclick="app.aNext()">'+(due[1]?("Pay "+N(due[1])):"Continue")+'</button></div>';
     break; }
 
   case "progfee": {
     const due = progDue();
     h += '<h2 style="margin-bottom:6px">'+esc(due[0])+'</h2>'
-      + '<div class="sub">The programme fee. The '+N(FEE)+' application fee is already paid and is not part of this.</div>'
+      + '<div class="sub">The '+N(FEE)+' application fee is already paid and is not part of this.</div>'
       + (due[1]
-        ? '<div class="pay" style="margin-top:24px">' + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
+        ? '<div class="pay" style="margin-top:22px">' + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
             + payRow("Account number", BANK.acct) + payRow("Amount", N(due[1]))
-            + payRow("Use as reference", A.ref) + '</div>'
-          + '<div class="note">Resumption is '+nextIntake()+'. Payment should be in before then.</div>'
-        : '<div class="note">This fee is confirmed with you at review, before resumption on '+nextIntake()+'.</div>')
+            + payRow("Use as narration", esc(A.name||"Your full name")) + '</div>'
+          + '<label class="drop" for="rc2" style="margin-top:22px">'
+            + (A.receipt2?"Receipt attached — tap to replace":"Upload your receipt")+'</label>'
+          + '<input id="rc2" type="file" accept="image/*,application/pdf" style="display:none" onchange="app.takeReceipt2(this)">'
+          + (A.receipt2?'<img class="receiptimg" src="'+A.receipt2+'" alt="Receipt">':'')
+          + '<div class="err" id="e-receipt2"></div>'
+          + '<p class="tiny" style="margin-top:14px">Resumption is '+nextIntake()+'.</p>'
+        : '<div class="note">This fee is confirmed with you directly, before resumption on '+nextIntake()+'.</div>')
       + acts(true,"app.aNext()", due[1]?"I have paid":"Continue");
     break; }
 
-  case "receipt":
-    h += '<div class="q">Upload your payment receipt.</div>'
-      + '<div class="sub">A screenshot or photo of the transfer. It is attached to your slip.</div>'
-      + '<label class="drop" for="rc" id="drop" style="margin-top:22px">Choose your receipt</label>'
-      + '<input id="rc" type="file" accept="image/*,application/pdf" style="display:none" onchange="app.takeReceipt(this)">'
-      + '<div class="actions"><button class="btn quiet" onclick="app.aBack()">Back</button>'
-      + '<button class="btn quiet" onclick="app.aNext()">Skip for now</button></div>';
-    break;
-
-  case "print": {
+  case "slip": {
     const due = progDue();
+    if(!A.ref) A.ref = mkRef();
     h = '<div class="label accent">Application submitted</div>'
       + '<h2 style="margin:12px 0 6px">'+esc(A.ref)+'</h2>'
-      + '<div class="sub">Keep this slip.</div>'
+      + '<div class="sub">Keep this slip. Quote this reference when you contact us.</div>'
       + facts([["Name", esc(A.name||"—")], ["Route", esc((RT[A.route]||{}).t||"—")],
                ["Programme", esc(due[0])],
                ["Starting point", esc(startingPoint())],
                ["Application fee", N(FEE)+" — paid"],
-               ["Programme fee", due[1]?N(due[1])+" — paid":"Confirmed at review"],
+               ["Programme fee", due[1]?N(due[1])+" — paid":"Confirmed with you"],
                ["Resumption", nextIntake()]])
-      + (A.receipt?'<div class="label" style="margin-top:26px">Receipt attached</div><img class="receiptimg" src="'+A.receipt+'" alt="Receipt">':"")
+      + (A.receipt2||A.receipt
+          ? '<div class="label" style="margin-top:26px">Receipt</div><img class="receiptimg" src="'+(A.receipt2||A.receipt)+'" alt="Receipt">' : "")
       + '<div class="note">Once we confirm your payment you receive your offer and starter kit by email, at '+esc(A.email||"the address you gave")+'. Admission is not automatic.</div>'
       + '<div class="actions"><button class="btn primary" onclick="window.print()">Print this slip</button>'
       + '<button class="btn quiet" onclick="app.close()">Done</button></div>';
@@ -1266,6 +1277,12 @@ function chk(i){ const set=chkSet(); A.chk += set[A.ci].a[i][1]; A.cans[A.ci]=i;
 function setErr(id,m){ const i=$("#f-"+id),e=$("#e-"+id); if(e)e.textContent=m||""; if(i)i.setAttribute("aria-invalid",m?"true":"false"); return !m; }
 function aNext(){
   const id = stepId();
+
+  if(id==="edu"){
+    const set = EDU[A.route] || EDU.ceo;
+    if(A.ei < set.length-1){ A.ei++; aStep(); return; }
+  }
+
   if(id==="details" && A.route==="junior"){
     ["name","dob","school","cls","location","interests","gname","grel","gphone","gemail","gemergency"]
       .forEach(k=>{ const el=$("#f-"+k); if(el) A[k]=el.value.trim(); });
@@ -1291,28 +1308,46 @@ function aNext(){
     ok = setErr("location", A.location.length<2?"Your city.":"") && ok;
     if(!ok) return;
   }
+
+  /* Proof is not optional. */
+  if(id==="fee" && !A.receipt){
+    setErr("receipt","Upload your receipt before continuing."); return;
+  }
+  if(id==="progfee" && progDue()[1] && !A.receipt2){
+    setErr("receipt2","Upload your receipt before continuing."); return;
+  }
   if(id==="programme" && A.route!=="founder" && A.route!=="ecosystem" && !A.track) return;
+
   if(A.s===flow().length-1) return;
   A.s++; aStep();
 }
 function aBack(){
-  /* Back always allows a different answer. */
   const id = stepId();
+  if(id==="edu"){ if(A.ei>0){ A.ei--; aStep(); } return; }
   if(id==="check"){
     if(A.ci>0){ A.ci--; A.chk-=chkSet()[A.ci].a[A.cans[A.ci]][1]; aStep(); return; }
-    A.s--; A.track=null; aStep(); return;
+    A.s--; aStep(); return;
   }
-  if(id==="programme" && A.track){ A.track=null; aStep(); return; }
-  if(A.s>0){ A.s--; if(stepId()==="check"){ A.ci=0; A.chk=0; A.cans=[]; } aStep(); }
+  if(A.s>0){
+    A.s--;
+    if(stepId()==="check"){ A.ci=0; A.chk=0; A.cans=[]; }
+    if(stepId()==="edu"){ const set=EDU[A.route]||EDU.ceo; A.ei=set.length-1; }
+    aStep();
+  }
 }
 function setStrength(v){ A.strength=v; if(!A.track) A.track=v; aStep(); }
-function takeReceipt(input){
+function readReceipt(input, cb){
   const f=input.files&&input.files[0]; if(!f) return;
   if(f.size>4*1024*1024){ toast("Receipt must be under 4MB"); return; }
   const rd=new FileReader();
-  rd.onload=()=>{ A.receipt = /^data:image/.test(rd.result) ? rd.result : null;
-    A.receiptName=f.name; toast("Receipt attached"); A.s++; aStep(); };
+  rd.onload=()=>{ cb(/^data:image/.test(rd.result)?rd.result:null, f.name); };
   rd.readAsDataURL(f);
+}
+function takeReceipt(input){
+  readReceipt(input,(d,n)=>{ A.receipt=d||"attached"; A.receiptName=n; toast("Receipt attached"); aStep(); });
+}
+function takeReceipt2(input){
+  readReceipt(input,(d,n)=>{ A.receipt2=d||"attached"; A.receiptName2=n; toast("Receipt attached"); aStep(); });
 }
 /* The footer logo is the staff door. Not advertised, not in any menu. */
 let staffTaps=0, staffTimer=null;
@@ -1333,6 +1368,11 @@ function staffGo(){
   location.href = "hamzury-system.html";
 }
 
+function toggleValues(){
+  const t=$("#values"), b=$("#vtoggle");
+  const open = t.classList.toggle("open");
+  b.setAttribute("aria-expanded", String(open));
+}
 function doLogin(){
   const v=($("#lg-ref").value||"").trim().toUpperCase();
   $("#lg-err").textContent = /^HMZ-/.test(v)
@@ -1340,11 +1380,11 @@ function doLogin(){
     : "That does not look like a reference.";
 }
 function startApp(route, track){
-  /* Every application starts clean — no stored memory, no inherited answers. */
-  Object.assign(A, { s:0, route:route||A.route, track:track||null, ci:0, chk:0, cans:[],
+  /* Every application starts clean. */
+  Object.assign(A, { s:0, ei:0, route:route||A.route, track:track||null, ci:0, chk:0, cans:[],
     name:"", email:"", phone:"", location:"", dob:"", school:"", cls:"", interests:"",
     gname:"", grel:"", gphone:"", gemail:"", gemergency:"", consent:false,
-    ref:null, receipt:null, receiptName:null });
+    ref:null, receipt:null, receiptName:null, receipt2:null });
   S.level=null; S.jroute=null;
   if(A.route==="junior") S.age="13-16";
   open("apply");
@@ -1505,7 +1545,7 @@ paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
          setRoute, setTrack, chk, copyRef,
-  pickProg, clearProg, sendEnquiry, takeReceipt, doLogin, staffTap, staffGo,
+  pickProg, clearProg, toggleValues, sendEnquiry, takeReceipt, takeReceipt2, doLogin, staffTap, staffGo,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
