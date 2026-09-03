@@ -378,7 +378,7 @@ const S = { level:null, jroute:null, age:null, route:null, track:null, guess:nul
 const ND = {
   start:    { nm:"Start",      why:"You are here.", req:"Nothing.", will:"See the route before you commit.", next:"Check" },
   check:    { nm:"Check",      why:"We read your current level.", req:"A few questions.", will:"Be placed, not tested.", next:"Foundation or track" },
-  found:    { nm:"Foundation", why:"The base every track assumes.", req:"Assigned, not chosen.", will:"Work fluently with the tools. One month.", next:"Your track" },
+  found:    { nm:"Foundation", why:"The base every track assumes.", req:"Assigned by the check, not chosen.", will:"Work fluently with the tools. One month, ₦45,000.", next:"Your track" },
   jbasic:   { nm:"Foundation", why:"Where every Junior begins.", req:"Age 13–16.", will:"Build digital confidence and make things.", next:"Software or Hardware" },
   jspec:    { nm:"Software / Hardware", why:"Your direction.", req:"Foundation complete.", will:"Build real projects.", next:"Projects" },
   jproj:    { nm:"Projects",   why:"Proof you can make things.", req:"A specialist route.", will:"Take one project all the way.", next:"Innovator → CEO at 17" },
@@ -831,7 +831,7 @@ V.fees = () => ({ t:"Fees", sub:"Two payments, at two different moments.", h:
          ["CEO → Founder",N(100000)+" per month"],
          ["Founder → Ecosystem",N(200000)+" · requires proven revenue over "+N(1000000)],
          ["Longer placements","Progression stays monthly. Each month is its own cycle."],
-         ["Foundation","Set at review"]]) });
+         ["Digital Foundation",N(45000)+" · one month"]]) });
 
 /* ---- Continue an application: check verification, then choose a track ---- */
 let RS = { ref:"", state:null, track:null, gate:null };
@@ -1068,7 +1068,9 @@ function progDue(){
   if(A.route==="founder")   return ["CEO → Founder — first month",100000];
   if(A.route==="ecosystem") return ["Founder → Ecosystem",200000];
   if(A.route==="siwes")     return ["SIWES placement — first month",30000];
-  if(S.level==="needs")     return ["Digital Foundation",null];
+  /* Foundation first if the check says so — the track fee follows later.
+     If the check cleared, the second payment is the track fee itself. */
+  if(S.level==="needs")     return ["Digital Foundation",45000];
   const t=trk(A.track); return [t?t.nm:"Programme", t?t.p:null];
 }
 const nextIntake = () => { const d=new Date(); d.setMonth(d.getMonth()+1); d.setDate(1);
@@ -1205,8 +1207,13 @@ function aStep(){
 
   case "progfee": {
     const due = progDue();
+    const later = S.level==="needs" && A.track && trk(A.track);
     h += '<h2 style="margin-bottom:6px">'+esc(due[0])+'</h2>'
-      + '<div class="sub">The '+N(FEE)+' application fee is already paid and is not part of this.</div>'
+      + '<div class="sub">'+(later
+          ? "Foundation comes first — one month. Your track fee is paid after it, not now."
+          : "The "+N(FEE)+" application fee is already paid and is not part of this.")+'</div>'
+      + (later?'<div class="amt" style="margin-top:18px"><div class="l">'+esc(trk(A.track).nm)
+          +'<small>After Foundation</small></div><div class="v later">'+N(trk(A.track).p)+'</div></div>':"")
       + (due[1]
         ? '<div class="pay" style="margin-top:22px">' + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
             + payRow("Account number", BANK.acct) + payRow("Amount", N(due[1]))
@@ -1228,10 +1235,18 @@ function aStep(){
       + '<h2 style="margin:12px 0 6px">'+esc(A.ref)+'</h2>'
       + '<div class="sub">Keep this slip. Quote this reference when you contact us.</div>'
       + facts([["Name", esc(A.name||"—")], ["Route", esc((RT[A.route]||{}).t||"—")],
-               ["Programme", esc(due[0])],
+               ["Paid for", esc(due[0])],
+               ["Chosen track", A.track ? esc(A.route==="junior"
+                    ? (A.track==="hardware"?"Robotics":"Software")
+                    : (trk(A.track)?trk(A.track).nm:A.track)) : "—"],
                ["Starting point", esc(startingPoint())],
                ["Application fee", N(FEE)+" — paid"],
                ["Programme fee", due[1]?N(due[1])+" — paid":"Confirmed with you"],
+               ["Still to pay", (S.level==="needs" && A.track)
+                    ? (A.route==="junior"
+                        ? (A.track==="hardware"?N(120000):N(30000))+" — after Foundation"
+                        : (trk(A.track)?N(trk(A.track).p)+" — after Foundation":"—"))
+                    : "Nothing"],
                ["Resumption", nextIntake()]])
       + (A.receipt2||A.receipt
           ? '<div class="label" style="margin-top:26px">Receipt</div><img class="receiptimg" src="'+(A.receipt2||A.receipt)+'" alt="Receipt">' : "")
