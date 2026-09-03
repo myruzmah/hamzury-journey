@@ -201,6 +201,10 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut) 40px}
 .prog{display:flex;gap:4px;margin-bottom:26px}
 .prog i{height:2px;flex:1;background:var(--line-2);border-radius:2px}
 .prog i.done{background:var(--muted)}
+.prog i.p-learn{background:var(--muted)}
+.prog i.p-you{background:var(--orange)}
+.prog i.p-choose{background:var(--gold)}
+.prog i.p-finish{background:var(--ink)}
 .prog i.now{background:var(--orange)}
 
 /* ---------- form ---------- */
@@ -585,12 +589,13 @@ const QID = id => QP.find(q=>q.id===id);
    mentioned; Junior pays the application fee first, then chooses and is assessed. */
 const FLOW = {
   /* Understand → identify → pay → choose → be assessed → pay → slip.
-     Nothing is chosen before the ₦5,000, and no receipt step is optional. */
+     SIWES proves the placement and picks its length before any money moves. */
+  siwes:   ["edu","details","placement","fee","bridge","programme","requirement","check","progfee","slip"],
   DEFAULT: ["edu","details","fee","bridge","programme","requirement","check","progfee","slip"]
 };
 const flow = () => FLOW[A.route] || FLOW.DEFAULT;
 const stepId = () => flow()[A.s];
-const STEP_LABEL = { edu:"Before you apply", details:"Your details", fee:"Application fee",
+const STEP_LABEL = { edu:"Before you apply", details:"Your details", placement:"Your placement", fee:"Application fee",
   bridge:"Your programme", programme:"Your programme", requirement:"Requirement",
   check:"Your level", progfee:"Programme fee", slip:"Your slip" };
 const BANK = { bank:"Moniepoint", name:"Hamzury Mainstream Ltd", acct:"82025158500" };
@@ -627,11 +632,21 @@ const STRENGTH = { q:"What are you strongest at?", a:[
   ["Design and content","media"],
   ["Talking to people and selling","revenue"],
   ["Organising work and systems","automation"] ]};
+/* Nine questions, because deciding someone needs Foundation on three is not fair.
+   Pass mark is set in checkPasses(). */
 const CHK = [
   { q:"Day to day, using a computer feels…", a:[["Comfortable",1],["Manageable",0],["New to me",-1]] },
-  { q:"Have you used tools like Docs, Sheets or Drive for real work?", a:[["Yes, regularly",1],["A little",0],["Not yet",-1]] },
-  { q:"Have you built or produced something digital before?", a:[["Yes",1],["Once or twice",0],["No",-1]] }
+  { q:"Have you used Docs, Sheets or Drive for real work?", a:[["Yes, regularly",1],["A little",0],["Not yet",-1]] },
+  { q:"Can you find, rename and organise your own files?", a:[["Easily",1],["Slowly",0],["Not really",-1]] },
+  { q:"Have you built or produced something digital before?", a:[["Yes",1],["Once or twice",0],["No",-1]] },
+  { q:"How do you handle a tool you have never seen?", a:[["Work it out myself",1],["Look for a guide",0],["Wait for help",-1]] },
+  { q:"Have you used AI tools for anything beyond curiosity?", a:[["Yes, for real work",1],["Tried them",0],["No",-1]] },
+  { q:"Writing a clear email or message is…", a:[["Easy",1],["Manageable",0],["Hard for me",-1]] },
+  { q:"Have you used a phone or laptop to solve a problem for someone else?", a:[["Yes",1],["Once or twice",0],["No",-1]] },
+  { q:"If something goes wrong online, you…", a:[["Search and fix it",1],["Try a little",0],["Stop and ask",-1]] }
 ];
+/* Out of nine, a score of 3 or more clears the requirement. */
+function checkPasses(){ return A.chk >= 3; }
 
 /* ---- treasury ---- */
 const TY = [
@@ -998,8 +1013,13 @@ function hypothesis(){
 const A = { s:0, route:null, track:null, name:"", email:"", phone:"", ref:null, chk:0, ci:0, cans:[], siwes:null, docs:false, founder:null };
 V.apply = () => ({ t:"Apply", h:'<div id="a"></div>', after:()=>aStep() });
 
-const prog = () => '<div class="prog">'+flow().map((_,i)=>'<i class="'+(i<A.s?"done":i===A.s?"now":"")+'"></i>').join("")+'</div>'
-  + '<div class="label" style="margin-bottom:20px">'+STEP_LABEL[stepId()]+'</div>';
+/* Four phases, four colours — you can see which part of the process you are in. */
+const PHASE = { edu:"p-learn", details:"p-you", placement:"p-you", fee:"p-you",
+  bridge:"p-choose", programme:"p-choose", requirement:"p-choose", check:"p-choose",
+  progfee:"p-finish", slip:"p-finish" };
+const prog = () => '<div class="prog">'+flow().map((id,i)=>
+    '<i class="'+(i<=A.s ? PHASE[id] : "")+(i===A.s?" now":"")+'"></i>').join("")+'</div>'
+  + '<div class="label" style="margin-bottom:20px">'+STEP_LABEL[stepId()]+'</div>' 
 const acts = (b,n,l) => '<div class="actions">'+(b?'<button class="btn quiet" onclick="app.aBack()">Back</button>':"")
   + (n?'<button class="btn primary" onclick="'+n+'">'+(l||"Continue")+'</button>':"")+'</div>';
 
@@ -1067,7 +1087,11 @@ function progDue(){
          : [A.track==="hardware"?"Robotics":"Software", A.track==="hardware"?120000:30000];
   if(A.route==="founder")   return ["CEO → Founder — first month",100000];
   if(A.route==="ecosystem") return ["Founder → Ecosystem",200000];
-  if(A.route==="siwes")     return ["SIWES placement — first month",30000];
+  if(A.route==="siwes"){
+    const m = A.months || "1";
+    const amt = {"1":30000,"2":50000,"3":70000}[m];
+    return ["SIWES placement — "+m+" month"+(m==="1"?"":"s"), amt];
+  }
   /* Foundation first if the check says so — the track fee follows later.
      If the check cleared, the second payment is the track fee itself. */
   if(S.level==="needs")     return ["Digital Foundation",45000];
@@ -1122,6 +1146,22 @@ function aStep(){
       + acts(true,"app.aNext()");
     break;
 
+  case "placement": {
+    /* Proof of placement and its length, before any money is discussed. */
+    const months=[["1","1 month",30000],["2","2 months",50000],["3","3 months or more",70000]];
+    h += '<div class="q">How long is your placement?</div>'
+      + '<div class="opts">' + months.map(m=>
+          '<button class="opt'+(A.months===m[0]?" on":"")+'" onclick="app.setMonths(\''+m[0]+'\')">'
+          + '<span>'+m[1]+'</span><span class="mark">'+N(m[2])+'</span></button>').join("") + '</div>'
+      + (A.months==="3"?'<div class="note">Three months is paid in full, once. Longer placements continue monthly after that.</div>':"")
+      + '<div class="label" style="margin:32px 0 8px">School letter</div>'
+      + '<p class="tiny" style="margin:0 0 12px">Your placement letter from the school. We verify it.</p>'
+      + '<label class="drop'+(A.letter?" ok":"")+'" for="lt">'+(A.letter?"School letter attached":"School letter")+'</label>'
+      + '<input id="lt" type="file" accept="image/*,application/pdf" style="display:none" onchange="app.takeLetter(this)">'
+      + '<div class="err" id="e-letter"></div>'
+      + acts(true,"app.aNext()");
+    break; }
+
   case "fee":
     /* Payment and proof on one page. Nothing advances without the receipt. */
     h += '<div class="big">'+N(FEE)+'</div>'
@@ -1129,11 +1169,10 @@ function aStep(){
       + '<div class="pay">' + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
         + payRow("Account number", BANK.acct) + payRow("Amount", N(FEE))
         + payRow("Use as narration", esc(A.name||"Your full name")) + '</div>'
-      + '<label class="drop" for="rc" style="margin-top:22px">'
-        + (A.receipt?"Receipt attached — tap to replace":"Upload your receipt")+'</label>'
+      + '<label class="drop'+(A.receipt?" ok":"")+'" for="rc" style="margin-top:22px">'
+        + (A.receipt?"Receipt attached":"Receipt")+'</label>'
       + '<input id="rc" type="file" accept="image/*,application/pdf" style="display:none" onchange="app.takeReceipt(this)">'
-      + (A.receipt?'<img class="receiptimg" src="'+A.receipt+'" alt="Receipt">':'')
-      + '<div class="err" id="e-receipt"></div>'
+            + '<div class="err" id="e-receipt"></div>'
       + acts(true,"app.aNext()","I have paid");
     break;
 
@@ -1191,7 +1230,7 @@ function aStep(){
         + '<div class="actions"><button class="btn quiet" onclick="app.aBack()">Back</button></div>';
       break;
     }
-    S.level = A.chk >= 1 ? "ready" : "needs";
+    S.level = (A.route==="junior" ? A.chk >= 1 : checkPasses()) ? "ready" : "needs";
     const due = progDue();
     h += '<h2>'+(S.level==="needs"
           ? (A.route==="junior" ? "Start with Basic Foundation." : "You start at Foundation.")
@@ -1218,11 +1257,10 @@ function aStep(){
         ? '<div class="pay" style="margin-top:22px">' + payRow("Bank", BANK.bank) + payRow("Account name", BANK.name)
             + payRow("Account number", BANK.acct) + payRow("Amount", N(due[1]))
             + payRow("Use as narration", esc(A.name||"Your full name")) + '</div>'
-          + '<label class="drop" for="rc2" style="margin-top:22px">'
-            + (A.receipt2?"Receipt attached — tap to replace":"Upload your receipt")+'</label>'
+          + '<label class="drop'+(A.receipt2?" ok":"")+'" for="rc2" style="margin-top:22px">'
+            + (A.receipt2?"Receipt attached":"Receipt")+'</label>'
           + '<input id="rc2" type="file" accept="image/*,application/pdf" style="display:none" onchange="app.takeReceipt2(this)">'
-          + (A.receipt2?'<img class="receiptimg" src="'+A.receipt2+'" alt="Receipt">':'')
-          + '<div class="err" id="e-receipt2"></div>'
+                    + '<div class="err" id="e-receipt2"></div>'
           + '<p class="tiny" style="margin-top:14px">Resumption is '+nextIntake()+'.</p>'
         : '<div class="note">This fee is confirmed with you directly, before resumption on '+nextIntake()+'.</div>')
       + acts(true,"app.aNext()", due[1]?"I have paid":"Continue");
@@ -1231,27 +1269,35 @@ function aStep(){
   case "slip": {
     const due = progDue();
     if(!A.ref) A.ref = mkRef();
-    h = '<div class="label accent">Application submitted</div>'
-      + '<h2 style="margin:12px 0 6px">'+esc(A.ref)+'</h2>'
-      + '<div class="sub">Keep this slip. Quote this reference when you contact us.</div>'
-      + facts([["Name", esc(A.name||"—")], ["Route", esc((RT[A.route]||{}).t||"—")],
-               ["Paid for", esc(due[0])],
-               ["Chosen track", A.track ? esc(A.route==="junior"
-                    ? (A.track==="hardware"?"Robotics":"Software")
-                    : (trk(A.track)?trk(A.track).nm:A.track)) : "—"],
-               ["Starting point", esc(startingPoint())],
-               ["Application fee", N(FEE)+" — paid"],
-               ["Programme fee", due[1]?N(due[1])+" — paid":"Confirmed with you"],
-               ["Still to pay", (S.level==="needs" && A.track)
-                    ? (A.route==="junior"
-                        ? (A.track==="hardware"?N(120000):N(30000))+" — after Foundation"
-                        : (trk(A.track)?N(trk(A.track).p)+" — after Foundation":"—"))
-                    : "Nothing"],
-               ["Resumption", nextIntake()]])
-      + (A.receipt2||A.receipt
-          ? '<div class="label" style="margin-top:26px">Receipt</div><img class="receiptimg" src="'+(A.receipt2||A.receipt)+'" alt="Receipt">' : "")
-      + '<div class="note">Once we confirm your payment you receive your offer and starter kit by email, at '+esc(A.email||"the address you gave")+'. Admission is not automatic.</div>'
-      + '<div class="actions"><button class="btn primary" onclick="window.print()">Print this slip</button>'
+    const track = A.track ? (A.route==="junior"
+        ? (A.track==="hardware"?"Robotics":"Software")
+        : (trk(A.track)?trk(A.track).nm:A.track)) : null;
+    const remaining = (S.level==="needs" && A.track && A.route!=="siwes")
+        ? (A.route==="junior" ? (A.track==="hardware"?120000:30000) : (trk(A.track)?trk(A.track).p:null))
+        : null;
+    h = '<div class="slip" id="slip">'
+      + '<div class="sliphead"><span>Hamzury Innovation Hub</span><span>'+esc(A.ref)+'</span></div>'
+      + '<h2 style="margin:18px 0 4px">Application submitted</h2>'
+      + '<p class="sub" style="margin-bottom:20px">'+esc(A.name||"")+'</p>'
+      + '<dl class="facts">'
+        + fact("Route", esc((RT[A.route]||{}).t||"—"))
+        + (track?fact("Programme", esc(track)):"")
+        + fact("Starting point", esc(startingPoint()))
+        + (A.route==="siwes"&&A.months?fact("Placement", A.months+" month"+(A.months==="1"?"":"s")):"")
+        + fact("Resumption", nextIntake())
+      + '</dl>'
+      + '<div class="label" style="margin:26px 0 6px">Payments</div>'
+      + '<div class="amt"><div class="l">Application fee</div><div class="v later">'+N(FEE)+' — paid</div></div>'
+      + '<div class="amt"><div class="l">'+esc(due[0])+'</div><div class="v later">'
+        + (due[1]?N(due[1])+" — paid":"Confirmed with you")+'</div></div>'
+      + (remaining?'<div class="amt"><div class="l">'+esc(track)+'<small>After Foundation</small></div>'
+          + '<div class="v later">'+N(remaining)+' — later</div></div>':"")
+      + '<p class="tiny" style="margin-top:26px">Payment evidence is checked by a person. Admission is not automatic.</p>'
+      + '</div>'
+      + '<div class="note ok" style="border-color:var(--gold)">Thank you. Nothing else is needed from you now — '
+        + 'we will contact you on '+esc(A.phone||"the number you gave")+' once your payment is confirmed, '
+        + 'and your offer and starter kit follow by email.</div>'
+      + '<div class="actions"><button class="btn primary" onclick="window.print()">Print or save as PDF</button>'
       + '<button class="btn quiet" onclick="app.close()">Done</button></div>';
     break; }
   }
@@ -1329,6 +1375,10 @@ function aNext(){
   if(id==="progfee" && progDue()[1] && !A.receipt2){
     setErr("receipt2","Upload your receipt before continuing."); return;
   }
+  if(id==="placement"){
+    if(!A.months){ setErr("letter","Choose how long your placement is."); return; }
+    if(!A.letter){ setErr("letter","Attach your school letter before continuing."); return; }
+  }
   if(id==="programme" && A.route!=="founder" && A.route!=="ecosystem" && !A.track) return;
 
   if(A.s===flow().length-1) return;
@@ -1362,6 +1412,10 @@ function takeReceipt(input){
 function takeReceipt2(input){
   readReceipt(input,(d,n)=>{ A.receipt2=d||"attached"; A.receiptName2=n; toast("Receipt attached"); aStep(); });
 }
+function takeLetter(input){
+  readReceipt(input,(d,n)=>{ A.letter=d||"attached"; A.letterName=n; toast("School letter attached"); aStep(); });
+}
+function setMonths(m){ A.months=m; aStep(); }
 /* The footer logo is the staff door. Not advertised, not in any menu. */
 let staffTaps=0, staffTimer=null;
 function staffTap(){
@@ -1397,7 +1451,7 @@ function startApp(route, track){
   Object.assign(A, { s:0, ei:0, route:route||A.route, track:track||null, ci:0, chk:0, cans:[],
     name:"", email:"", phone:"", location:"", dob:"", school:"", cls:"", interests:"",
     gname:"", grel:"", gphone:"", gemail:"", gemergency:"", consent:false,
-    ref:null, receipt:null, receiptName:null, receipt2:null });
+    ref:null, receipt:null, receiptName:null, receipt2:null, letter:null, months:null });
   S.level=null; S.jroute=null;
   if(A.route==="junior") S.age="13-16";
   open("apply");
@@ -1558,7 +1612,7 @@ paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
          setRoute, setTrack, chk, copyRef,
-  pickProg, clearProg, toggleValues, sendEnquiry, takeReceipt, takeReceipt2, doLogin, staffTap, staffGo,
+  pickProg, clearProg, toggleValues, sendEnquiry, takeReceipt, takeReceipt2, takeLetter, setMonths, doLogin, staffTap, staffGo,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
