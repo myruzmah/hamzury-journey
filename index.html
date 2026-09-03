@@ -284,20 +284,10 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut) 40px}
   </section>
 
   <section class="stance">
-    <div class="label">The difference</div>
-    <h2 style="margin-top:16px">NOT JUST LEARNING.<span>BUILDING WHAT WORKS.</span></h2>
+    <div class="label">How it works</div>
+    <h2 style="margin-top:16px">Learn it. Build it.<span>Use it.</span></h2>
     <div class="flow" id="stance-flow"></div>
-    <div class="compare">
-      <div>
-        <div class="cl">Traditional learning</div>
-        <ul><li>Learn first</li><li>Take notes</li><li>Complete a course</li><li>Attendance</li><li>Certificate</li></ul>
-      </div>
-      <div>
-        <div class="cl">Hamzury</div>
-        <ul><li>Discover first</li><li>Build</li><li>Apply</li><li>Evidence</li><li>Achievement</li><li>Business</li></ul>
-      </div>
-    </div>
-    <p class="core">We don't ask you to learn everything first. <em>We help you learn what works, then use it.</em></p>
+    <p class="core">You do not learn everything first. <em>You learn what works, then use it.</em></p>
   </section>
 
   <div class="group">
@@ -526,7 +516,18 @@ const QP = [
 const QID = id => QP.find(q=>q.id===id);
 
 /* ---- application: nine steps ---- */
-const STEP = ["Explore","Check","Your programme","Your details","Application fee","Send evidence","Confirmed"];
+/* The order differs by route. SIWES chooses work and is assessed before money is
+   mentioned; Junior pays the application fee first, then chooses and is assessed. */
+const FLOW = {
+  siwes:   ["explore","programme","check","details","fee","evidence","slip"],
+  junior:  ["explore","details","fee","evidence","programme","check","slip"],
+  DEFAULT: ["explore","check","programme","details","fee","evidence","confirmed"]
+};
+const flow = () => FLOW[A.route] || FLOW.DEFAULT;
+const stepId = () => flow()[A.s];
+const STEP_LABEL = { explore:"Explore", check:"Check", programme:"Your programme",
+  details:"Your details", fee:"Application fee", evidence:"Send evidence",
+  confirmed:"Confirmed", slip:"Your slip" };
 const BANK = { bank:"Moniepoint", name:"Hamzury Mainstream Ltd", acct:"82025158500" };
 const WHATSAPP = "08067149356";
 /* Apps Script Web app URL. Empty = disabled; the site falls back to WhatsApp only,
@@ -535,6 +536,17 @@ const SHEET_URL = "";
 /* SIWES / internship placements are priced by duration, not per month */
 
 /* ---- level check: three questions, asked once ---- */
+const CHK_JUNIOR = [
+  { q:"Have you used a computer or laptop before?", a:[["Yes, often",1],["A few times",0],["Not really",-1]] },
+  { q:"Have you ever made something on a computer?", a:[["Yes",1],["Once or twice",0],["No",-1]] },
+  { q:"Typing and finding files feels…", a:[["Easy",1],["Okay",0],["Hard",-1]] }
+];
+const STRENGTH = { q:"What are you strongest at?", a:[
+  ["Working with numbers and records","data"],
+  ["Building or fixing things","software"],
+  ["Design and content","media"],
+  ["Talking to people and selling","revenue"],
+  ["Organising work and systems","automation"] ]};
 const CHK = [
   { q:"Day to day, using a computer feels…", a:[["Comfortable",1],["Manageable",0],["New to me",-1]] },
   { q:"Have you used tools like Docs, Sheets or Drive for real work?", a:[["Yes, regularly",1],["A little",0],["Not yet",-1]] },
@@ -623,15 +635,10 @@ V.paths = () => ({ t:"Find my path", sub:"If you already know what you want.", h
     '</span><span class="t">'+esc(RT[k].t)+'<span class="m">'+esc(RT[k].m)+'</span></span><span class="go">→</span></button>'
   ).join("") +
   '<button class="row" onclick="app.open(\'tracks\')"><span class="n">06</span>'+
-  '<span class="t">Tracks<span class="m">Choose a capability directly</span></span><span class="go">→</span></button>'+
-  '<button class="row" onclick="app.open(\'partnership\')"><span class="n">07</span>'+
-  '<span class="t">Partner<span class="m">Build something together</span></span><span class="go">→</span></button>'+
-  '<button class="row" onclick="app.open(\'sponsorship\')"><span class="n">08</span>'+
-  '<span class="t">Sponsor<span class="m">Fund what comes next</span></span><span class="go">→</span></button></div>' +
+  '<span class="t">Programmes<span class="m">Choose a capability directly</span></span><span class="go">→</span></button></div>' +
   '<div class="note">Not sure? <button style="color:var(--gold)" onclick="app.open(\'guide\')">Guide me instead</button></div>' });
 
-/* ---- tracks ---- */
-V.tracks = () => ({ t:"Tracks", sub:"Twelve problems worth solving.", h:
+V.tracks = () => ({ t:"Programmes", sub:"Twelve problems worth solving.", h:
   '<div class="index">' + TR.map((t,i)=>
     '<button class="row" onclick="app.open(\'t-'+t.id+'\')"><span class="n">'+String(i+1).padStart(2,"0")+
     '</span><span class="t">'+esc(t.nm)+'<span class="m">'+esc(t.prob)+'</span></span><span class="go">'+N(t.p)+'</span></button>'
@@ -649,7 +656,7 @@ TR.forEach(t=>{
     jmap(["track","build","market","revenue","ceo"],"track") +
     '<div class="amt" style="margin-top:26px"><div class="l">Track fee<small>Separate from the '+N(FEE)+' application fee</small></div><div class="v now">'+N(t.p)+'</div></div>' +
     '<div class="actions"><button class="btn primary" onclick="app.startApp(\'ceo\',\''+t.id+'\')">Apply</button>'+
-    '<button class="btn quiet" onclick="app.open(\'tracks\')">Other tracks</button></div>' });
+    '<button class="btn quiet" onclick="app.open(\'tracks\')">Other programmes</button></div>' });
 });
 
 V.inside = () => ({ t:"Inside the journey", sub:"Every journey runs month by month. Each month is an achievement cycle.", h:
@@ -954,13 +961,13 @@ function hypothesis(){
 const A = { s:0, route:null, track:null, name:"", email:"", phone:"", ref:null, chk:0, ci:0, cans:[], siwes:null, docs:false, founder:null };
 V.apply = () => ({ t:"Apply", h:'<div id="a"></div>', after:()=>aStep() });
 
-const prog = () => '<div class="prog">'+STEP.map((_,i)=>'<i class="'+(i<A.s?"done":i===A.s?"now":"")+'"></i>').join("")+'</div>'
-  + '<div class="label" style="margin-bottom:20px">'+STEP[A.s]+'</div>';
+const prog = () => '<div class="prog">'+flow().map((_,i)=>'<i class="'+(i<A.s?"done":i===A.s?"now":"")+'"></i>').join("")+'</div>'
+  + '<div class="label" style="margin-bottom:20px">'+STEP_LABEL[stepId()]+'</div>';
 const acts = (b,n,l) => '<div class="actions">'+(b?'<button class="btn quiet" onclick="app.aBack()">Back</button>':"")
   + (n?'<button class="btn primary" onclick="'+n+'">'+(l||"Continue")+'</button>':"")+'</div>';
 
-function pickProg(v){ if(A.route==="siwes") A.siwes=v; else { A.track=v; if(A.route==="junior") S.jroute=v; } aStep(); }
-function clearProg(){ if(A.route==="siwes") A.siwes=null; else A.track=null; aStep(); }
+function pickProg(v){ A.track=v; if(A.route==="junior") S.jroute=v; aStep(); }   /* SIWES now picks a track too */
+function clearProg(){ A.track=null; aStep(); }
 function progLabel(){
   if(A.route==="junior") return A.track==="hardware"?"Robotics":A.track==="software"?"Software":"Programme fee";
   if(A.route==="siwes") return A.siwes==="intern"?"Direct internship":A.siwes?("SIWES · "+A.siwes+" month"+(A.siwes==="1"?"":"s")):"Placement fee";
@@ -1011,90 +1018,101 @@ function applicationMessage(){
   return L.join("\n");
 }
 
+function chkSet(){ return A.route==="junior" ? CHK_JUNIOR : CHK; }
+function startingPoint(){
+  if(A.route==="junior") return S.level==="needs" ? "Junior Basic Foundation" : "your specialist route";
+  return S.level==="needs" ? "Foundation" : "your track";
+}
+
 function aStep(){
   const box=$("#a"); if(!box) return;
   const r = A.route?RT[A.route]:null;
   let h = prog();
-  switch(A.s){
-  case 0: /* EXPLORE — know what you are applying to */
+  switch(stepId()){
+
+  case "explore":
     h += r ? '<h2>'+esc(r.t)+'</h2><div class="sub">'+esc(r.m)+'</div>'+jmap(r.map(), S.level==="needs"?(A.route==="junior"?"jbasic":"found"):null)
            : '<div class="q">Which route?</div><div class="opts">'+Object.keys(RT).map(k=>
              '<button class="opt" onclick="app.setRoute(\''+k+'\')"><span>'+esc(RT[k].t)+'<small>'+esc(RT[k].m)+'</small></span><span class="mark">→</span></button>').join("")+'</div>';
     h += acts(false, r?"app.aNext()":null);
     break;
 
-  case 1: /* CHECK — the system places you; Foundation is never offered as a choice */
-    if(A.ci < CHK.length){
-      const c = CHK[A.ci];
+  case "check": {
+    const set = chkSet();
+    if(A.ci < set.length){
+      const c = set[A.ci];
       h += '<div class="q">'+esc(c.q)+'</div><div class="opts">'+c.a.map((o,i)=>
         '<button class="opt" onclick="app.chk('+i+')"><span>'+esc(o[0])+'</span><span class="mark">→</span></button>').join("")+'</div>';
-    } else {
-      S.level = A.chk >= 1 ? "ready" : "needs";
-      h += '<h2>'+(S.level==="needs"?"Your starting point is Foundation.":"You are ready for your track.")+'</h2>'+
-        '<div class="sub">'+(S.level==="needs"?"The shortest route to your track.":"You go straight to your track.")+
-          (S.guess?" Based on your Guide Me answers.":"")+'</div>'+
-        jmap(RT[A.route].map(), S.level==="needs"?(A.route==="junior"?"jbasic":"found"):"track") + acts(true,"app.aNext()");
+      break;
     }
-    break;
-
-  case 2: /* YOUR PROGRAMME — chosen, and priced, before any money moves */
-    {
-      const opts = A.route==="junior"
-        ? [["software","Software",30000],["hardware","Robotics",120000]]
-        : A.route==="siwes"
-          ? [["1","SIWES · 1 month",30000],["2","SIWES · 2 months",50000],["3","SIWES · 3 months",70000],["intern","Direct internship · per month",70000]]
-          : TR.map(t=>[t.id,t.nm,t.p]);
-      const picked = A.route==="siwes" ? A.siwes : A.track;
-      if(A.route==="founder"||A.route==="ecosystem"){
-        const adv = A.route==="founder"
-          ? ["CEO → Founder", N(100000)+" per month", "You already run a business.", "Stop being the system. Build the system.", "Founder"]
-          : ["Founder → Ecosystem", N(200000), "Founder status and proven revenue over "+N(1000000)+".", "Expand, or build the next venture on what you already proved.", "Ecosystem"];
-        h += '<h2>'+esc(adv[0])+'</h2>'
-          + facts([["Why","No track is chosen here — this route works on the business you already have."],
-                   ["Required", esc(adv[2])],
-                   ["You will", esc(adv[3])],
-                   ["Next", esc(adv[4])],
-                   ["Price", "<b>"+adv[1]+"</b>"]])
-          + '<div class="note">This is not what you pay today. Today is the '+N(FEE)+' application fee.</div>'
-          + acts(true,"app.aNext()");
-      } else if(!picked){
-        h += '<div class="q">Which programme?</div>'
-          + (A.route==="junior"?'<div class="note">Basic Foundation ('+N(25000)+') comes first, then the route you choose here.</div>':"")
-          + '<div class="opts">' + opts.map(o=>
-              '<button class="opt" onclick="app.pickProg(\''+o[0]+'\')"><span>'+esc(o[1])+
-              '</span><span class="mark">'+N(o[2])+'</span></button>').join("") + '</div>'
-          + acts(true,null);
-      } else {
-        const o = opts.find(x=>x[0]===picked) || opts[0];
-        const t = (A.route!=="siwes" && A.route!=="junior") ? trk(picked) : null;
-        h += '<h2>'+esc(o[1])+'</h2>'
-          + facts([
-              ["Why", t?esc(t.prob):"You join the professional journey as Junior Staff."],
-              ["Required", S.level==="needs"?"Foundation first — one month.":"You are ready for this."],
-              ["You will", t?esc(t.work):"Work five days a week on the journey your level supports."],
-              ["Next", t?esc(t.out):"Progress month by month."],
-              ["Price", "<b>"+N(o[2])+"</b>"+(picked==="intern"?" per month":"")
-                 +(A.route==="junior"?" — after Basic Foundation "+N(25000):"")]
-            ])
-          + '<div class="note">This is not what you pay today. Today is the '+N(FEE)+' application fee. The programme fee comes only after your application is verified.</div>'
-          + '<div class="actions"><button class="btn quiet" onclick="app.clearProg()">Change</button>'
-          + '<button class="btn primary" onclick="app.aNext()">Continue</button></div>';
-      }
+    if(A.route==="siwes" && !A.strength){
+      h += '<div class="q">'+esc(STRENGTH.q)+'</div><div class="opts">'+STRENGTH.a.map(o=>
+        '<button class="opt" onclick="app.setStrength(\''+o[1]+'\')"><span>'+esc(o[0])+'</span><span class="mark">→</span></button>').join("")+'</div>';
+      break;
     }
-    break;
+    S.level = A.chk >= 1 ? "ready" : "needs";
+    h += '<h2>'+(S.level==="needs" ? "You start at "+startingPoint()+"." : "You are ready for "+startingPoint()+".")+'</h2>'
+      + '<div class="sub">'+(S.level==="needs"
+          ? "The check placed you here. It is the shortest route forward, and nothing is lost."
+          : "The check cleared the requirement.")+'</div>'
+      + jmap(RT[A.route].map(), S.level==="needs"?(A.route==="junior"?"jbasic":"found"):"track")
+      + acts(true,"app.aNext()");
+    break; }
 
-  case 3: /* BIO — a minor's application carries guardian details and consent */
+  case "programme": {
+    const siwes = A.route==="siwes";
+    const opts = A.route==="junior"
+      ? [["software","Software",30000],["hardware","Robotics",120000]]
+      : TR.map(t=>[t.id,t.nm,t.p]);
+    if(A.route==="founder"||A.route==="ecosystem"){
+      const adv = A.route==="founder"
+        ? ["CEO → Founder", N(100000)+" per month", "You already run a business.",
+           "Systemise the business — including building at least three software systems to carry the workflow.", "Founder"]
+        : ["Founder → Ecosystem", N(200000), "Founder status and proven revenue over "+N(1000000)+".",
+           "Expand, or build the next venture on what you already proved.", "Ecosystem"];
+      h += '<h2>'+esc(adv[0])+'</h2>'
+        + facts([["Why","No track is chosen here — this route works on the business you already have."],
+                 ["Required", esc(adv[2])],["You will", esc(adv[3])],["Next", esc(adv[4])],
+                 ["Price", "<b>"+adv[1]+"</b>"]])
+        + '<div class="note">This is not what you pay today. Today is the '+N(FEE)+' application fee.</div>'
+        + acts(true,"app.aNext()");
+      break;
+    }
+    if(!A.track){
+      h += '<div class="q">'+(siwes?"Which track do you want to work in?":"Which programme?")+'</div>'
+        + (siwes?'<div class="note">Choose the work first. Fees are arranged only after you are accepted.</div>':"")
+        + (A.route==="junior"?'<div class="note">If the check shows you need it, Basic Foundation ('+N(25000)+') comes first.</div>':"")
+        + '<div class="opts">' + opts.map(o=>
+            '<button class="opt" onclick="app.pickProg(\''+o[0]+'\')"><span>'+esc(o[1])+
+            '</span><span class="mark">'+(siwes?"→":N(o[2]))+'</span></button>').join("") + '</div>'
+        + acts(true,null);
+      break;
+    }
+    const o = opts.find(x=>x[0]===A.track) || opts[0];
+    const t = A.route!=="junior" ? trk(A.track) : null;
+    h += '<h2>'+esc(o[1])+'</h2>'
+      + facts([["Why", t?esc(t.prob):"Build real capability before commercial pressure."],
+               ["Required", S.level==="needs"?"The check comes next.":"You are ready for this."],
+               ["You will", t?esc(t.work):"Build, make a project, and present it."],
+               ["Next", t?esc(t.out):"Present your project."]]
+              .concat(siwes ? [["Fee","Arranged after you are accepted."]]
+                            : [["Price","<b>"+N(o[2])+"</b>"+(A.route==="junior"?" — after Basic Foundation "+N(25000):"")]]))
+      + (siwes?'<div class="note">Five days a week, 8:00–3:00, as Junior Staff.</div>'
+              :'<div class="note">This is not what you pay today. Today is the '+N(FEE)+' application fee.</div>')
+      + '<div class="actions"><button class="btn quiet" onclick="app.clearProg()">Change</button>'
+      + '<button class="btn primary" onclick="app.aNext()">Continue</button></div>';
+    break; }
+
+  case "details":
     if(A.route==="junior"){
       const fld=(k,l,t,ph)=>'<div class="field"><label for="f-'+k+'">'+l+'</label><input id="f-'+k+'" type="'+(t||"text")+'"'+
         (ph?' placeholder="'+ph+'"':'')+' value="'+esc(A[k]||"")+'"><div class="err" id="e-'+k+'"></div></div>';
       h += '<div class="label">Applicant</div>'
         + fld("name","Full name") + fld("dob","Date of birth","date")
-        + fld("school","School") + fld("cls","Class") + fld("location","Location")
-        + fld("interests","Interests")
+        + fld("school","School") + fld("cls","Class") + fld("location","Location") + fld("interests","Interests")
         + '<div class="label" style="margin-top:34px">Parent or guardian</div>'
         + fld("gname","Full name") + fld("grel","Relationship","text","Parent, guardian…")
-        + fld("gphone","Phone","tel") + fld("gemail","Email","email")
-        + fld("gemergency","Emergency contact","tel")
+        + fld("gphone","Phone","tel") + fld("gemail","Email","email") + fld("gemergency","Emergency contact","tel")
         + '<div class="field" style="margin-top:22px"><label style="display:flex;gap:14px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:14.5px;color:var(--muted);font-weight:400;min-height:48px;padding:12px 0;cursor:pointer">'
         + '<input type="checkbox" id="f-consent" style="width:20px;height:20px;flex:0 0 auto;margin-top:2px;accent-color:var(--orange)"'+(A.consent?" checked":"")+'>'
         + '<span>I am the parent or guardian and I consent to this application.</span></label>'
@@ -1108,7 +1126,7 @@ function aStep(){
       + acts(true,"app.aNext()");
     break;
 
-  case 4: /* APPLICATION FEE — official instructions, clearly not tuition */
+  case "fee":
     h += '<div class="big">'+N(FEE)+'</div>'
       + '<div class="sub" style="margin-top:14px">Application fee. Not programme tuition, and it does not guarantee admission.</div>'
       + '<div class="pay">'
@@ -1116,34 +1134,52 @@ function aStep(){
         + payRow("Account number", BANK.acct) + payRow("Amount", N(FEE))
         + payRow("Use as reference", A.ref || (A.ref = mkRef()))
       + '</div>'
-      + '<div class="amt"><div class="l">'+esc(progLabel())+'<small>Separate, later, only after your application is verified</small></div><div class="v later">'+progFee()+'</div></div>' 
+      + (A.route==="siwes"
+          ? '<div class="note">This covers your application only. If you are accepted, your placement fee is arranged then.</div>'
+          : '<div class="amt"><div class="l">'+esc(progLabel())+'<small>Separate, later, only after your application is verified</small></div><div class="v later">'+progFee()+'</div></div>')
       + acts(true,"app.aNext()","I have paid");
     break;
 
-
-  case 5: /* SEND EVIDENCE — honest: no backend, so it goes to WhatsApp */
+  case "evidence":
     h += '<div class="q">Send your payment evidence.</div>'
       + '<div class="sub">Send your receipt on WhatsApp, quoting your reference. A person checks it — verification is not automatic.</div>'
       + '<div class="pay" style="margin-top:26px">' + payRow("WhatsApp", WHATSAPP) + payRow("Your reference", A.ref) + '</div>'
       + '<div class="actions"><a class="btn primary" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener"'
       + ' href="https://wa.me/234'+WHATSAPP.replace(/^0/,"")+'?text='+encodeURIComponent(applicationMessage())+'">Open WhatsApp</a>'
       + '<button class="btn quiet" onclick="app.copyRef()">Copy reference</button></div>'
-      + '<div class="note">Your details are attached to the message so we can open your file. This site does not store your receipt, and nothing is transmitted from this page.</div>'
-      + acts(true,"app.finishApp()","I have sent it");
+      + '<div class="note">Your details are attached to the message so we can open your file. This site does not store your receipt.</div>'
+      + acts(true,"app.aNext()","I have sent it");
     break;
 
-  case 6: /* CONFIRMED — what happens next */
+  case "slip":
+    h = '<div class="label accent">Application submitted</div>'
+      + '<h2 style="margin:12px 0 6px">'+esc(A.ref)+'</h2>'
+      + '<div class="sub">Keep this slip. It identifies your application.</div>'
+      + facts([["Route", esc((RT[A.route]||{}).t||"—")],
+               ["Chosen", A.track?esc(A.route==="junior"?(A.track==="hardware"?"Robotics":"Software"):(trk(A.track)?trk(A.track).nm:A.track)):"—"],
+               ["Starting point", S.level==="needs"?startingPoint():"Ready for "+startingPoint()],
+               ["Application fee", N(FEE)+" — evidence sent"]])
+      + '<div class="note">We check your evidence, then send you an acceptance or a rejection. '
+      + (A.route==="siwes"
+          ? 'If you are accepted, your placement fee is arranged then and you receive an acceptance document to print.'
+          : 'If you are accepted, your programme fee and orientation follow.')+'</div>'
+      + '<div class="actions"><button class="btn primary" onclick="window.print()">Print this slip</button>'
+      + '<button class="btn quiet" onclick="app.close()">Done</button></div>';
+    break;
+
+  case "confirmed":
     h = '<div class="label accent">Application received</div>'
-      + '<h2 style="margin:14px 0 8px">'+esc(A.ref)+'</h2>'
+      + '<h2 style="margin:12px 0 6px">'+esc(A.ref)+'</h2>'
       + '<div class="sub">Keep this reference. It identifies your application.</div>'
-      + '<div class="steps-next">'
+      + '<div style="margin-top:30px">'
         + nextRow("1","Your payment evidence is checked","A person checks it against the account.")
         + nextRow("2","Your application is reviewed",(S.level==="needs"?"Your starting point is Foundation.":"You are ready for your track."))
         + nextRow("3","You are contacted with the next step","Programme details and fees are shared then, separately.")
         + nextRow("4","Your Journey begins after confirmation","Nothing is automatic. Admission is not guaranteed.")
       + '</div>'
-      + '<div class="note">Applications are received between the 1st and 25th. If you applied outside that window, you are held for the next one.</div>'
-      + '<div class="actions"><button class="btn quiet" onclick="app.close()">Done</button></div>';
+      + '<div class="note">Applications are received between the 1st and 25th each month.</div>'
+      + '<div class="actions"><button class="btn primary" onclick="window.print()">Print this slip</button>'
+      + '<button class="btn quiet" onclick="app.close()">Done</button></div>';
     break;
   }
   box.innerHTML = h;
@@ -1169,14 +1205,6 @@ function postToSheet(extra){
   }catch(e){ /* never block the applicant on this */ }
 }
 
-function finishApp(){
-  A.submitted = new Date().toISOString();
-  postToSheet();
-  try{ localStorage.setItem("hamzury.application", JSON.stringify({
-    ref:A.ref, at:A.submitted, name:A.name, email:A.email, phone:A.phone, location:A.location,
-    route:A.route, level:S.level, track:A.track||S.track||null })); }catch(e){}
-  A.s=5; aStep();
-}
 
 /* ============================================================
    CONTROL + ENGINE
@@ -1185,29 +1213,28 @@ function setRoute(k){ A.route=k; A.track=null; if(k==="junior") S.age="13-16"; a
 function setTrack(t){ A.track=t; aStep(); }
 function setSiwes(v){ A.siwes=v; aStep(); }
 function setFounder(v){ A.founder=v; aStep(); }
-function chk(i){ A.chk += CHK[A.ci].a[i][1]; A.cans[A.ci]=i; A.ci++; aStep(); }
+function chk(i){ const set=chkSet(); A.chk += set[A.ci].a[i][1]; A.cans[A.ci]=i; A.ci++; aStep(); }
 function setErr(id,m){ const i=$("#f-"+id),e=$("#e-"+id); if(e)e.textContent=m||""; if(i)i.setAttribute("aria-invalid",m?"true":"false"); return !m; }
 function aNext(){
-  if(A.s===2 && A.route!=="founder" && A.route!=="ecosystem"
-     && !(A.route==="siwes"?A.siwes:A.track)) return;
-  if(A.s===3 && A.route==="junior"){
+  const id = stepId();
+  if(id==="programme" && A.route!=="founder" && A.route!=="ecosystem" && !A.track) return;
+
+  if(id==="details" && A.route==="junior"){
     ["name","dob","school","cls","location","interests","gname","grel","gphone","gemail","gemergency"]
       .forEach(k=>{ const el=$("#f-"+k); if(el) A[k]=el.value.trim(); });
     A.consent = $("#f-consent") ? $("#f-consent").checked : false;
     let ok=true;
-    ok = setErr("name", A.name.length<2?"The applicant's name.":"") && ok;
+    ok = setErr("name", (A.name||"").length<2?"The applicant's name.":"") && ok;
     ok = setErr("dob", A.dob?"":"Date of birth.") && ok;
-    ok = setErr("school", A.school.length<2?"School name.":"") && ok;
-    ok = setErr("gname", A.gname.length<2?"Parent or guardian name.":"") && ok;
-    ok = setErr("gphone", A.gphone.replace(/\D/g,"").length<7?"A reachable number.":"") && ok;
-    ok = setErr("gemail", /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(A.gemail)?"":"A valid email.") && ok;
-    ok = setErr("gemergency", A.gemergency.replace(/\D/g,"").length<7?"An emergency number.":"") && ok;
+    ok = setErr("school", (A.school||"").length<2?"School name.":"") && ok;
+    ok = setErr("gname", (A.gname||"").length<2?"Parent or guardian name.":"") && ok;
+    ok = setErr("gphone", (A.gphone||"").replace(/\D/g,"").length<7?"A reachable number.":"") && ok;
+    ok = setErr("gemail", /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(A.gemail||"")?"":"A valid email.") && ok;
+    ok = setErr("gemergency", (A.gemergency||"").replace(/\D/g,"").length<7?"An emergency number.":"") && ok;
     ok = setErr("consent", A.consent?"":"Guardian consent is required.") && ok;
     if(!ok) return;
-    A.email = A.gemail; A.phone = A.gphone;   /* we contact the guardian */
-    A.s++; aStep(); return;
-  }
-  if(A.s===3){                       /* bio moved to step 3 when the programme step was inserted */
+    A.email = A.gemail; A.phone = A.gphone;
+  } else if(id==="details"){
     A.name=$("#f-name").value.trim(); A.email=$("#f-email").value.trim();
     A.phone=$("#f-phone").value.trim(); A.location=$("#f-location").value.trim();
     let ok=true;
@@ -1217,16 +1244,38 @@ function aNext(){
     ok = setErr("location", A.location.length<2?"Your city.":"") && ok;
     if(!ok) return;
   }
-  if(A.s===STEP.length-1) return;
+
+  if(id==="evidence"){
+    A.submitted = new Date().toISOString();
+    try{ localStorage.setItem("hamzury.application", JSON.stringify({
+      ref:A.ref, at:A.submitted, name:A.name, email:A.email, phone:A.phone, location:A.location,
+      route:A.route, level:S.level, track:A.track||null })); }catch(e){}
+    postToSheet();
+  }
+  if(A.s===flow().length-1) return;
   A.s++; aStep();
 }
-function aBack(){ if(A.s===1&&A.ci>0){ A.ci--; A.chk-=CHK[A.ci].a[A.cans[A.ci]][1]; aStep(); return; } if(A.s>0){ A.s--; aStep(); } }
+function aBack(){
+  if(stepId()==="check"){
+    const set=chkSet();
+    if(A.route==="siwes" && A.strength){ A.strength=null; aStep(); return; }
+    if(A.ci>0){ A.ci--; A.chk-=set[A.ci].a[A.cans[A.ci]][1]; aStep(); return; }
+  }
+  if(A.s>0){ A.s--; aStep(); }
+}
+function setStrength(v){ A.strength=v; if(!A.track) A.track=v; aStep(); }
 function startApp(route, track){
-  A.route=route||A.route; A.track=track||A.track; if(route==="junior") S.age="13-16";
+  const changed = route && route !== A.route;
+  A.route = route || A.route;
+  /* a different route must never inherit the last route's track or answers */
+  if(changed){ A.track = track || null; A.strength = null; A.cans = []; S.jroute = null; }
+  else if(track){ A.track = track; }
+  if(A.route==="junior") S.age="13-16";
   A.s=0;
-  /* Guide Me already read their level. Do not ask again — and never contradict it. */
-  if(S.level){ A.ci=CHK.length; A.chk = S.level==="ready" ? 1 : -1; }
-  else { A.ci=0; A.chk=0; }
+  /* Guide Me already read their level. Do not ask again — and never contradict it.
+     A route change re-runs the check, because the questions differ per route. */
+  if(S.level && !changed){ A.ci = chkSet().length; A.chk = S.level==="ready" ? 1 : -1; }
+  else { A.ci=0; A.chk=0; if(changed) S.level=null; }
   open("apply");
 }
 
@@ -1293,20 +1342,22 @@ function paint(){
   const row=(i,t,m,act)=>'<button class="row" onclick="'+act+'"><span class="n">'+i+
     '</span><span class="t">'+esc(t)+'<span class="m">'+esc(m)+'</span></span><span class="go">→</span></button>';
   /* one flat index. Certainty goes to Tracks or a route; uncertainty goes to Guide Me. */
-  $("#index").innerHTML = [
-    ["Find my path",      "Every route, side by side",          "app.open('paths')"],
-    ["Guide me",          "If you are not sure yet",            "app.open('guide')"],
-    ["Junior Innovator",  RT.junior.m,                          "app.open('r-junior')"],
-    ["Innovator → CEO",   RT.ceo.m,                             "app.open('r-ceo')"],
-    ["CEO → Founder",     RT.founder.m,                         "app.open('r-founder')"],
-    ["Founder → Ecosystem",RT.ecosystem.m,                      "app.open('r-ecosystem')"],
-    ["SIWES / Internship","Same journey, different arrangement","app.open('r-siwes')"],
-    ["Partnership",       "Build something together",           "app.open('partnership')"],
-    ["Sponsorship",       "Fund a participant",                 "app.open('sponsorship')"],
-    ["Tracks",            "Twelve problems worth solving",         "app.open('tracks')"],
-    ["Life at Hamzury",   "Where the work happens",             "app.open('life')"],
-    ["Treasury",          "Cohorts, projects, businesses",      "app.open('treasury')"]
-  ].map((d,i)=>row(String(i+1).padStart(2,"0"), d[0], d[1], d[2])).join("");
+  /* Find my path and Guide me are already in the hero — not repeated here. */
+  const grp=(t)=>'</div><div class="label" style="margin:34px 0 10px">'+t+'</div><div class="index">';
+  let n=0; const rw=(d)=>{n++;return row(String(n).padStart(2,"0"), d[0], d[1], d[2]);};
+  $("#index").innerHTML =
+    [["Junior Innovator",   RT.junior.m,                          "app.open('r-junior')"],
+     ["Innovator → CEO",    RT.ceo.m,                             "app.open('r-ceo')"],
+     ["CEO → Founder",      RT.founder.m,                         "app.open('r-founder')"],
+     ["Founder → Ecosystem",RT.ecosystem.m,                       "app.open('r-ecosystem')"],
+     ["SIWES / Internship", "Same journey, different arrangement","app.open('r-siwes')"],
+     ["Programmes",         "Twelve problems worth solving",      "app.open('tracks')"]].map(rw).join("")
+    + grp("Inside Hamzury")
+    + [["Life at Hamzury", "Where the work happens",        "app.open('life')"],
+       ["Treasury",        "Cohorts, projects, businesses", "app.open('treasury')"]].map(rw).join("")
+    + grp("Work with us")
+    + [["Partnership", "Build something together", "app.open('partnership')"],
+       ["Sponsorship", "Fund a participant",       "app.open('sponsorship')"]].map(rw).join("");
   try{ const s=localStorage.getItem("hamzury.app"); if(s){ const r=JSON.parse(s); S.app=r;
     Object.assign(A,{name:r.name,email:r.email,phone:r.phone,route:r.route,track:r.track,ref:r.ref}); S.level=r.level; } }catch(e){}
 }
@@ -1372,8 +1423,8 @@ function sendEnquiry(kind){
 paint(); sync();
 
 return { open, close, back, top, toast, pick, qBack, startApp, aNext, aBack, aStep,
-         setRoute, setTrack, chk, copyRef, finishApp,
-  rsCheck, rsPick, rsSubmit, rsReset, rsGate, rsSetRef, rsPickBack, pickProg, clearProg, sendEnquiry,
+         setRoute, setTrack, chk, copyRef,
+  rsCheck, rsPick, rsSubmit, rsReset, rsGate, rsSetRef, rsPickBack, pickProg, clearProg, sendEnquiry, setStrength,
          _s:S, _A:A, _V:V, _RT:RT, _TR:TR, _ND:ND, _QP:QP, _CHK:CHK, _G:G, _enough:enough, _nextQ:nextQ };
 })();
 </script>
