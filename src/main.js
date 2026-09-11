@@ -4,6 +4,7 @@
    ============================================================ */
 import "./styles/theme.css";
 import "./styles/components.css";
+import "./styles/admin.css";
 import "./styles/main.css";
 
 import { $, esc, STAFF_CODE } from "./data/constants.js";
@@ -12,6 +13,7 @@ import { Router } from "./app/router.js";
 import { Guide } from "./app/guide.js";
 import { ApplicationFlow } from "./app/applicationFlow.js";
 import { StatusChecker } from "./app/statusChecker.js";
+import { AdminDashboard } from "./app/adminDashboard.js";
 import { registerAllViews, handleEnquirySubmission } from "./app/views.js";
 
 // Staff tap counter
@@ -177,10 +179,26 @@ window.app = {
   sendEnquiry: (k) => handleEnquirySubmission(k),
   checkStatus: () => StatusChecker.checkStatus(),
 
+  // Admin Dashboard
+  adminLogin: () => AdminDashboard.login(),
+  adminLogout: () => AdminDashboard.logout(),
+  adminTab: (t) => AdminDashboard.setTab(t),
+  adminFilter: (f) => AdminDashboard.setFilter(f),
+  adminSearch: (q) => AdminDashboard.handleSearch(q),
+  adminVerify: (ref) => AdminDashboard.verifyApplicant(ref),
+  adminReopen: (ref) => AdminDashboard.reopenApplicant(ref),
+  adminReject: (ref) => AdminDashboard.rejectApplicant(ref),
+  adminDelete: (ref) => AdminDashboard.deleteApp(ref),
+  adminDeleteEnquiry: (kind, id) => AdminDashboard.deleteEnq(kind, id),
+  adminAddDemo: () => AdminDashboard.addDemo(),
+  adminExportCSV: () => AdminDashboard.exportCSV(),
+  adminCopy: (text, label) => AdminDashboard.copyText(text, label),
+  adminRefresh: () => AdminDashboard.refresh(),
+
   // UI helpers
   toggleValues,
   staffTap,
-  staffGo
+  staffGo: () => AdminDashboard.login()
 };
 
 // Initialize views and router on DOM ready

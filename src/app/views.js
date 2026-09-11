@@ -9,6 +9,7 @@ import { Router } from "./router.js";
 import { Guide } from "./guide.js";
 import { ApplicationFlow } from "./applicationFlow.js";
 import { StatusChecker } from "./statusChecker.js";
+import { AdminDashboard } from "./adminDashboard.js";
 import { savePartnership, saveSponsorship } from "../services/enquiries.js";
 
 export function registerAllViews() {
@@ -376,7 +377,8 @@ export function registerAllViews() {
       '<div class="note">Enter your HMZ reference given upon application submission to see real-time payment verification and placement updates.</div>' +
       '<div class="actions"><a class="btn quiet" style="text-decoration:none;display:inline-block" target="_blank" rel="noopener" href="https://wa.me/234' +
       WHATSAPP.replace(/^0/, "") +
-      '">Message Hamzury Support</a></div>'
+      '">Message Hamzury Support</a></div>' +
+      '<div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--line);text-align:center"><button class="tiny" style="background:none;border:none;color:var(--dim);cursor:pointer;text-decoration:underline" onclick="window.app.open(\'admin\')">Admissions Staff & Admin Portal ›</button></div>'
   }));
 
   // Guide Me
@@ -492,16 +494,9 @@ export function registerAllViews() {
       '<div class="note">This submits your offer to Hamzury and opens WhatsApp to connect directly.</div>'
   }));
 
-  // Staff login view
-  Router.registerView("staff", () => ({
-    t: "Staff access",
-    sub: "Hamzury team only.",
-    h:
-      '<div class="field"><label for="st-code">Access code</label>' +
-      '<input id="st-code" type="password" autocomplete="off"><div class="err" id="st-err"></div></div>' +
-      '<div class="actions"><button class="btn primary" onclick="window.app.staffGo()">Continue</button></div>' +
-      '<div class="note">This portal requires team authorization.</div>'
-  }));
+  // Admin & Staff Admissions Dashboard
+  Router.registerView("admin", () => AdminDashboard.renderView());
+  Router.registerView("staff", () => AdminDashboard.renderView());
 }
 
 /**
