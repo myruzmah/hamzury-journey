@@ -347,7 +347,7 @@ export const ApplicationFlow = (function () {
           '<div class="label" style="margin:32px 0 8px">School letter</div>' +
           '<p class="tiny" style="margin:0 0 12px">Your placement letter from the school. We verify it.</p>' +
           '<div class="upload-box">' +
-          '  <div class="drop' + (A.letter ? " ok" : "") + '" id="drop-zone-lt" onclick="$(\'#lt\').click()">' +
+          '  <label class="drop' + (A.letter ? " ok" : "") + '" for="lt" id="drop-zone-lt" ondragover="event.preventDefault()" ondrop="window.app.handleDrop(event, \'lt\')">' +
           '    <div class="drop-left">' +
           '      <div class="drop-icon">' + (A.letter ? "✓" : "🏫") + '</div>' +
           '      <div>' +
@@ -355,10 +355,10 @@ export const ApplicationFlow = (function () {
           '        <div class="drop-desc">' + (A.letter ? esc(A.letterName) : "Attach official letter from your institution (PDF / Image)") + '</div>' +
           '      </div>' +
           '    </div>' +
-          '    <button type="button" class="btn primary btn-upload" onclick="event.stopPropagation(); $(\'#lt\').click()">' +
+          '    <span class="btn primary btn-upload">' +
           (A.letter ? "Change File" : "Choose / Upload Letter") +
-          '    </button>' +
-          '  </div>' +
+          '    </span>' +
+          '  </label>' +
           (A.letter && A.letterFile && A.letterFile.type?.startsWith("image/")
             ? '<div class="receipt-thumb-preview"><img src="' + A.letter + '" alt="Letter preview" /><span class="tiny">' + esc(A.letterName) + '</span></div>'
             : "") +
@@ -384,7 +384,7 @@ export const ApplicationFlow = (function () {
           payRow("Use as narration", esc(A.name || "Your full name")) +
           "</div>" +
           '<div class="upload-box">' +
-          '  <div class="drop' + (A.receipt ? " ok" : "") + '" id="drop-zone-rc" onclick="$(\'#rc\').click()">' +
+          '  <label class="drop' + (A.receipt ? " ok" : "") + '" for="rc" id="drop-zone-rc" ondragover="event.preventDefault()" ondrop="window.app.handleDrop(event, \'rc\')">' +
           '    <div class="drop-left">' +
           '      <div class="drop-icon">' + (A.receipt ? "✓" : "📄") + '</div>' +
           '      <div>' +
@@ -392,10 +392,10 @@ export const ApplicationFlow = (function () {
           '        <div class="drop-desc">' + (A.receipt ? esc(A.receiptName) : "Upload your transfer receipt or bank slip (PNG, JPG, PDF)") + '</div>' +
           '      </div>' +
           '    </div>' +
-          '    <button type="button" class="btn primary btn-upload" onclick="event.stopPropagation(); $(\'#rc\').click()">' +
+          '    <span class="btn primary btn-upload">' +
           (A.receipt ? "Change Receipt" : "Choose / Upload Receipt") +
-          '    </button>' +
-          '  </div>' +
+          '    </span>' +
+          '  </label>' +
           (A.receipt && A.receiptFile && A.receiptFile.type?.startsWith("image/")
             ? '<div class="receipt-thumb-preview"><img src="' + A.receipt + '" alt="Receipt preview" /><span class="tiny">' + esc(A.receiptName) + '</span></div>'
             : "") +
@@ -579,7 +579,7 @@ export const ApplicationFlow = (function () {
               payRow("Use as narration", esc(A.name || "Your full name")) +
               "</div>" +
               '<div class="upload-box">' +
-              '  <div class="drop' + (A.receipt2 ? " ok" : "") + '" id="drop-zone-rc2" onclick="$(\'#rc2\').click()">' +
+              '  <label class="drop' + (A.receipt2 ? " ok" : "") + '" for="rc2" id="drop-zone-rc2" ondragover="event.preventDefault()" ondrop="window.app.handleDrop(event, \'rc2\')">' +
               '    <div class="drop-left">' +
               '      <div class="drop-icon">' + (A.receipt2 ? "✓" : "📄") + '</div>' +
               '      <div>' +
@@ -587,10 +587,10 @@ export const ApplicationFlow = (function () {
               '        <div class="drop-desc">' + (A.receipt2 ? esc(A.receiptName2) : "Upload your transfer receipt or bank slip (PNG, JPG, PDF)") + '</div>' +
               '      </div>' +
               '    </div>' +
-              '    <button type="button" class="btn primary btn-upload" onclick="event.stopPropagation(); $(\'#rc2\').click()">' +
+              '    <span class="btn primary btn-upload">' +
               (A.receipt2 ? "Change Receipt" : "Choose / Upload Receipt") +
-              '    </button>' +
-              '  </div>' +
+              '    </span>' +
+              '  </label>' +
               (A.receipt2 && A.receiptFile2 && A.receiptFile2.type?.startsWith("image/")
                 ? '<div class="receipt-thumb-preview"><img src="' + A.receipt2 + '" alt="Receipt preview" /><span class="tiny">' + esc(A.receiptName2) + '</span></div>'
                 : "") +
@@ -925,6 +925,20 @@ export const ApplicationFlow = (function () {
     window.open(`https://wa.me/234${WHATSAPP.replace(/^0/, "")}?text=${text}`, "_blank");
   }
 
+  function handleDrop(event, inputId) {
+    event.preventDefault();
+    const files = event.dataTransfer && event.dataTransfer.files;
+    if (!files || !files[0]) return;
+    if (inputId === "lt") takeLetter({ files: [files[0]] });
+    else if (inputId === "rc") takeReceipt({ files: [files[0]] });
+    else if (inputId === "rc2") takeReceipt2({ files: [files[0]] });
+  }
+
+  function pickFile(id) {
+    const el = document.getElementById(id);
+    if (el) el.click();
+  }
+
   return {
     startApp,
     renderStep,
@@ -939,6 +953,8 @@ export const ApplicationFlow = (function () {
     takeLetter,
     toggleTerms,
     sendAppWhatsApp,
+    handleDrop,
+    pickFile,
     getState: () => A
   };
 })();

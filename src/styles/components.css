@@ -532,6 +532,7 @@
   letter-spacing: 0.05em !important;
   white-space: nowrap;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .receipt-thumb-preview {

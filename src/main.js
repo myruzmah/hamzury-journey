@@ -150,6 +150,10 @@ function paintLandingPage() {
   }
 }
 
+// Expose $ selectors globally for any inline event handlers
+window.$ = (s, el = document) => el.querySelector(s);
+window.$$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+
 // Global public API on window.app
 window.app = {
   open: (k) => Router.open(k),
@@ -175,6 +179,8 @@ window.app = {
   takeLetter: (el) => ApplicationFlow.takeLetter(el),
   toggleTerms: (v) => ApplicationFlow.toggleTerms(v),
   sendAppWhatsApp: () => ApplicationFlow.sendAppWhatsApp(),
+  handleDrop: (e, id) => ApplicationFlow.handleDrop(e, id),
+  pickFile: (id) => ApplicationFlow.pickFile(id),
 
   // Enquiries & Status
   sendEnquiry: (k) => handleEnquirySubmission(k),
