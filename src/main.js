@@ -173,6 +173,7 @@ window.app = {
   takeReceipt: (el) => ApplicationFlow.takeReceipt(el),
   takeReceipt2: (el) => ApplicationFlow.takeReceipt2(el),
   takeLetter: (el) => ApplicationFlow.takeLetter(el),
+  toggleTerms: (v) => ApplicationFlow.toggleTerms(v),
   sendAppWhatsApp: () => ApplicationFlow.sendAppWhatsApp(),
 
   // Enquiries & Status
@@ -190,6 +191,8 @@ window.app = {
   adminReject: (ref) => AdminDashboard.rejectApplicant(ref),
   adminDelete: (ref) => AdminDashboard.deleteApp(ref),
   adminDeleteEnquiry: (kind, id) => AdminDashboard.deleteEnq(kind, id),
+  adminCreateCourse: () => AdminDashboard.createCourse(),
+  adminDeleteCourse: (id) => AdminDashboard.removeCourse(id),
   adminExportCSV: () => AdminDashboard.exportCSV(),
   adminCopy: (text, label) => AdminDashboard.copyText(text, label),
   adminRefresh: () => AdminDashboard.refresh(),

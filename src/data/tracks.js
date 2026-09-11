@@ -160,4 +160,16 @@ export const TR = [
   }
 ];
 
-export const trk = (id) => TR.find((t) => t.id === id);
+export const trk = (id) => {
+  const found = TR.find((t) => t.id === id);
+  if (found) return found;
+  try {
+    const raw = localStorage.getItem("hamzury.customCourses");
+    if (raw) {
+      const list = JSON.parse(raw);
+      const custom = list.find((t) => t.id === id);
+      if (custom) return custom;
+    }
+  } catch (e) {}
+  return null;
+};

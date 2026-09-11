@@ -451,31 +451,108 @@
   border-bottom-color: var(--error);
 }
 
-/* ---------- File Dropzone ---------- */
+/* ---------- File Dropzone & Receipt Upload Button ---------- */
+.upload-box {
+  margin: 22px 0 16px;
+}
+
 .drop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 22px;
   border: 1px dashed var(--line-2);
-  border-radius: 2px;
+  border-radius: 4px;
+  background: var(--navy-2);
   color: var(--ink);
   font-size: 14.5px;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
 .drop:hover {
   border-color: var(--orange);
-  background: rgba(242, 101, 42, 0.04);
+  background: rgba(235, 90, 60, 0.05);
 }
 
 .drop.ok {
   border-style: solid;
   border-color: var(--gold);
-  background: rgba(233, 162, 76, 0.06);
+  background: rgba(233, 162, 76, 0.08);
+}
+
+.drop-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1 1 200px;
+}
+
+.drop-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--gold);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.drop.ok .drop-icon {
+  background: rgba(233, 162, 76, 0.2);
+  color: var(--gold);
+  font-weight: bold;
+}
+
+.drop-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.drop-desc {
+  font-size: 12.5px;
+  color: var(--dim);
+  word-break: break-all;
+}
+
+.drop.ok .drop-desc {
   color: var(--gold);
 }
+
+.btn-upload {
+  padding: 10px 18px !important;
+  font-size: 12.5px !important;
+  letter-spacing: 0.05em !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.receipt-thumb-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.receipt-thumb-preview img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid var(--line-2);
+}
+
 
 .upload-progress {
   margin-top: 10px;
@@ -759,3 +836,207 @@
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* ---------- Prospectus & Print Styles ---------- */
+.prospectus-wrap {
+  margin-top: 10px;
+}
+
+.prospectus-principles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.principle-card {
+  background: var(--navy-2);
+  border: 1px solid var(--line);
+  padding: 18px;
+  border-radius: 4px;
+}
+
+.principle-card b {
+  display: block;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.principle-card p {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.stage-card {
+  background: var(--navy-2);
+  border: 1px solid var(--line);
+  padding: 20px;
+  border-radius: 4px;
+}
+
+.stage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stage-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.stage-badge {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  background: rgba(233, 162, 76, 0.15);
+  color: var(--gold);
+  padding: 4px 10px;
+  border-radius: 99px;
+}
+
+.prospectus-list {
+  margin: 10px 0 0 18px;
+  padding: 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.siwes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.siwes-item {
+  background: var(--navy-2);
+  border: 1px solid var(--line);
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.siwes-item .k {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: block;
+}
+
+.siwes-item .v {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 6px 0;
+  display: block;
+}
+
+.siwes-item .d {
+  font-size: 12px;
+  color: var(--muted);
+  display: block;
+}
+
+.prospectus-tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.prospectus-track-card {
+  background: var(--navy-2);
+  border: 1px solid var(--line);
+  padding: 18px;
+  border-radius: 4px;
+}
+
+.schedule-box {
+  background: var(--navy-2);
+  border: 1px solid var(--line);
+  padding: 20px;
+  border-radius: 4px;
+}
+
+.schedule-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.schedule-row:last-child {
+  border-bottom: none;
+}
+
+.schedule-row .time {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.schedule-row .desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Print Styles for Clean Prospectus PDF */
+@media print {
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .panelbar, .foot, .topnav, .actions, .toast, .btn, button {
+    display: none !important;
+  }
+
+  .modal {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+  }
+
+  .panel {
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    color: #111 !important;
+  }
+
+  .principle-card, .stage-card, .siwes-item, .prospectus-track-card, .schedule-box {
+    background: #fafafa !important;
+    border: 1px solid #ddd !important;
+    color: #222 !important;
+    break-inside: avoid;
+  }
+
+  .stage-title, .principle-card b, .siwes-item .v, h1, h2, h3 {
+    color: #000 !important;
+  }
+
+  .stage-badge {
+    border: 1px solid #999 !important;
+    color: #000 !important;
+    background: #eee !important;
+  }
+
+  .sub, .prospectus-list, .schedule-row .desc, p {
+    color: #333 !important;
+  }
+}
+

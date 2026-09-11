@@ -10,6 +10,8 @@ import { Guide } from "./guide.js";
 import { ApplicationFlow } from "./applicationFlow.js";
 import { StatusChecker } from "./statusChecker.js";
 import { AdminDashboard } from "./adminDashboard.js";
+import { Prospectus } from "./prospectus.js";
+import { getAllCourses } from "../services/courses.js";
 import { savePartnership, saveSponsorship } from "../services/enquiries.js";
 
 export function registerAllViews() {
@@ -162,7 +164,7 @@ export function registerAllViews() {
         row("Robotics", "Build with physical and technical systems", N(120000), "window.app.open('r-junior')") +
         "</div>" +
         grp("Innovator → CEO", "Ages 17+. One track, taken to a working business.") +
-        TR.map((t) => row(t.nm, t.prob, N(t.p), "window.app.open('t-" + t.id + "')")).join("") +
+        getAllCourses().map((t) => row(t.nm, t.prob, N(t.p), "window.app.open('t-" + t.id + "')")).join("") +
         "</div>" +
         grp("CEO → Founder", "For a business that already works.") +
         row("CEO → Founder", "Partnerships, grants and growth", N(100000) + " / month", "window.app.open('r-founder')") +
@@ -177,8 +179,8 @@ export function registerAllViews() {
     };
   });
 
-  // Individual Track details
-  TR.forEach((t) => {
+  // Individual Track details for all active courses
+  getAllCourses().forEach((t) => {
     Router.registerView("t-" + t.id, () => ({
       t: t.nm,
       h:
@@ -493,6 +495,32 @@ export function registerAllViews() {
       '<div class="actions"><button class="btn primary" onclick="window.app.sendEnquiry(\'sponsor\')">Send</button></div>' +
       '<div class="note">This submits your offer to Hamzury and opens WhatsApp to connect directly.</div>'
   }));
+
+  // Terms of Admission & Policy
+  const termsView = () => ({
+    t: "Terms of Admission & Policy",
+    sub: "Institutional rules, ownership protections, and financial protocols.",
+    h:
+      facts([
+        ["Application Protocol", "The ₦5,000 application fee is non-refundable. It covers discovery assessment, placement evaluation, and diagnostic checks. Payment does not guarantee automatic admission."],
+        ["Intellectual Property", "100% of all code, systems, brands, and revenue generated remain the exclusive property of the participant. Hamzury takes zero equity without formal venture partnership."],
+        ["Attendance Standard", "Daily presence from 8:00 AM to 2:00 PM (or 3:00 PM for SIWES). Progress is based on working commercial output and milestone unlocks, not passive attendance."],
+        ["Separate Programme Fee", "Programme tuition is separate from the application fee and is only paid once your route and starting level are officially confirmed by our admissions panel."],
+        ["Banking Verification", "All payments must be remitted directly to Hamzury Mainstream Ltd (Moniepoint: 82025158500). Falsified payment receipts result in immediate revocation."],
+        ["Data Privacy", "Applicant data is stored securely and used solely for enrollment, mentorship matching, and SIWES compliance."]
+      ]) +
+      '<div class="note ok" style="margin-top:24px">These terms ensure accountability, rigorous commercial execution, and protected ownership for every Hamzury innovator.</div>' +
+      '<div class="actions" style="margin-top:24px">' +
+      '<button class="btn primary" onclick="window.app.back()">Understood & Return</button>' +
+      '<button class="btn quiet" onclick="window.print()">Print Terms</button>' +
+      '</div>'
+  });
+
+  Router.registerView("terms", termsView);
+  Router.registerView("policy", termsView);
+
+  // Journey Prospectus View
+  Router.registerView("prospectus", () => Prospectus.renderView());
 
   // Admin & Staff Admissions Dashboard
   Router.registerView("admin", () => AdminDashboard.renderView());

@@ -352,3 +352,49 @@
   font-size: 14px;
 }
 
+/* Course Management & Forms */
+.admin-form-box {
+  background: var(--navy-2);
+  border: 1px solid var(--line);
+  padding: 22px;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-field label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-weight: 700;
+}
+
+.admin-field input, .admin-field textarea, .admin-field select {
+  background: var(--navy);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  padding: 10px 12px;
+  font-size: 13.5px;
+  border-radius: 2px;
+  font-family: inherit;
+}
+
+.admin-field input:focus, .admin-field textarea:focus, .admin-field select:focus {
+  outline: none;
+  border-color: var(--orange);
+}
+
+

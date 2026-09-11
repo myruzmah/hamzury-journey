@@ -1,11 +1,11 @@
 /* ============================================================
    HAMZURY PRODUCTION ADMIN DASHBOARD
-   Admissions review, Cloudinary receipts viewer & Firestore management
+   Admissions review, Cloudinary receipts viewer, Courses & Firestore management
    Authenticated for admin@hamzury.com
    ============================================================ */
 import { $, N, ADMIN_EMAIL, ADMIN_PASSWORD, STAFF_CODE, esc } from "../data/constants.js";
 import { RT } from "../data/routes.js";
-import { trk } from "../data/tracks.js";
+import { trk, TR as DEFAULT_TRACKS } from "../data/tracks.js";
 import {
   fetchAllApplications,
   updateApplicationStatus,
@@ -16,6 +16,12 @@ import {
   clearAllDemoData,
   exportApplicationsCSV
 } from "../services/admin.js";
+import {
+  getAllCourses,
+  addCourse,
+  deleteCourse,
+  fetchCustomCourses
+} from "../services/courses.js";
 import { Router } from "./router.js";
 
 export const AdminDashboard = (function () {
@@ -23,7 +29,8 @@ export const AdminDashboard = (function () {
   let applications = [];
   let partnerships = [];
   let sponsorships = [];
-  let currentTab = "apps"; // 'apps' | 'enquiries'
+  let courses = [];
+  let currentTab = "apps"; // 'apps' | 'enquiries' | 'courses'
   let filterStatus = "all"; // 'all' | 'review' | 'verified' | 'rejected'
   let searchQuery = "";
 
@@ -31,6 +38,8 @@ export const AdminDashboard = (function () {
     applications = await fetchAllApplications();
     partnerships = await fetchAllPartnerships();
     sponsorships = await fetchAllSponsorships();
+    await fetchCustomCourses();
+    courses = getAllCourses();
     renderContent();
   }
 
@@ -126,6 +135,34 @@ export const AdminDashboard = (function () {
     Router.toast("Deleting enquiry…");
     await deleteEnquiry(kind, id);
     Router.toast("Enquiry deleted.");
+    await loadData();
+  }
+
+  async function createCourse() {
+    const nm = ($("#crs-name")?.value || "").trim();
+    const p = Number($("#crs-fee")?.value) || 60000;
+    const prob = ($("#crs-prob")?.value || "").trim();
+    const market = ($("#crs-market")?.value || "").trim();
+    const work = ($("#crs-work")?.value || "").trim();
+    const out = ($("#crs-out")?.value || "").trim();
+    const fit = ($("#crs-fit")?.value || "").trim();
+
+    if (!nm) {
+      alert("Please enter a course name.");
+      return;
+    }
+
+    Router.toast("Adding course: " + nm + "…");
+    await addCourse({ nm, p, prob, market, work, out, fit });
+    Router.toast("Course added successfully!");
+    await loadData();
+  }
+
+  async function removeCourse(id) {
+    if (!confirm("Are you sure you want to remove this course?")) return;
+    Router.toast("Removing course…");
+    await deleteCourse(id);
+    Router.toast("Course removed.");
     await loadData();
   }
 
@@ -237,8 +274,8 @@ export const AdminDashboard = (function () {
           <span class="v" style="color:var(--ink);font-size:20px">${N(revenueVerified)}</span>
         </div>
         <div class="admin-stat-card">
-          <span class="k">Enquiries</span>
-          <span class="v" style="color:var(--gold)">${enquiriesCount}</span>
+          <span class="k">Courses / Tracks</span>
+          <span class="v" style="color:var(--gold)">${courses.length}</span>
         </div>
       </div>
 
@@ -248,6 +285,9 @@ export const AdminDashboard = (function () {
         </button>
         <button class="admin-tab ${currentTab === "enquiries" ? "active" : ""}" onclick="window.app.adminTab('enquiries')">
           Partnerships & Sponsorships (${enquiriesCount})
+        </button>
+        <button class="admin-tab ${currentTab === "courses" ? "active" : ""}" onclick="window.app.adminTab('courses')">
+          Courses & Programmes (${courses.length})
         </button>
       </div>
     `;
@@ -392,7 +432,7 @@ export const AdminDashboard = (function () {
           `;
         });
       }
-    } else {
+    } else if (currentTab === "enquiries") {
       // Enquiries tab
       h += `
         <h3 style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
@@ -483,6 +523,76 @@ export const AdminDashboard = (function () {
           `;
         });
       }
+    } else {
+      // Courses & Programmes Tab
+      h += `
+        <div class="admin-form-box">
+          <h3 style="margin-bottom:8px">Add New Course / Track</h3>
+          <p class="tiny" style="color:var(--muted);margin-bottom:18px">
+            Newly created courses are saved to Cloud Firestore and immediately appear in the public programmes catalog and application track selector.
+          </p>
+          <div class="admin-form-grid">
+            <div class="admin-field">
+              <label for="crs-name">Course Name *</label>
+              <input id="crs-name" placeholder="e.g. Cloud & DevOps Engineer" />
+            </div>
+            <div class="admin-field">
+              <label for="crs-fee">Programme Fee (₦) *</label>
+              <input id="crs-fee" type="number" placeholder="65000" />
+            </div>
+            <div class="admin-field">
+              <label for="crs-prob">Market Problem *</label>
+              <input id="crs-prob" placeholder="What breaks or fails without this?" />
+            </div>
+            <div class="admin-field">
+              <label for="crs-market">Target Market *</label>
+              <input id="crs-market" placeholder="Who pays for this solution?" />
+            </div>
+            <div class="admin-field">
+              <label for="crs-work">The Work / Practical Building *</label>
+              <input id="crs-work" placeholder="What the participant actually builds" />
+            </div>
+            <div class="admin-field">
+              <label for="crs-out">Business Outcome *</label>
+              <input id="crs-out" placeholder="e.g. Deployed cloud infrastructure" />
+            </div>
+            <div class="admin-field" style="grid-column:1/-1">
+              <label for="crs-fit">Who It's Fit For</label>
+              <input id="crs-fit" placeholder="e.g. For engineers who care about uptime and scalable infrastructure." />
+            </div>
+          </div>
+          <button class="btn primary" onclick="window.app.adminCreateCourse()">+ Save & Publish Course</button>
+        </div>
+
+        <h3 style="margin:24px 0 14px">Active Courses & Tracks (${courses.length})</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px">
+          ${courses
+            .map((c) => {
+              const isDefault = DEFAULT_TRACKS.some((d) => d.id === c.id);
+              return `
+                <div class="admin-card" style="margin:0">
+                  <div class="admin-card-head">
+                    <div>
+                      <div class="admin-card-title" style="font-size:16px">${esc(c.nm)}</div>
+                      <div class="tiny" style="color:var(--gold);margin-top:2px">Fee: ${N(c.p)}</div>
+                    </div>
+                    ${
+                      !isDefault
+                        ? `<button class="btn-admin danger" onclick="window.app.adminDeleteCourse('${esc(c.id)}')">🗑 Delete</button>`
+                        : '<span class="tiny" style="color:var(--dim)">Standard Track</span>'
+                    }
+                  </div>
+                  <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-top:8px">
+                    <div><b>Problem:</b> ${esc(c.prob)}</div>
+                    <div style="margin-top:4px"><b>The Work:</b> ${esc(c.work)}</div>
+                    <div style="margin-top:4px;color:var(--dim)"><b>Outcome:</b> ${esc(c.out)}</div>
+                  </div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      `;
     }
 
     root.innerHTML = h;
@@ -504,6 +614,8 @@ export const AdminDashboard = (function () {
     rejectApplicant,
     deleteApp,
     deleteEnq,
+    createCourse,
+    removeCourse,
     exportCSV,
     copyText,
     refresh: loadData

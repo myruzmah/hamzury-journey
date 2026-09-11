@@ -7,6 +7,7 @@ import { TR, trk } from "../data/tracks.js";
 import { RT, EDU, FLOW, STEP_LABEL, PHASE } from "../data/routes.js";
 import { CHK, CHK_FOUNDER, CHK_ECO, CHK_JUNIOR, checkPasses } from "../data/questions.js";
 import { submitApplication } from "../services/applications.js";
+import { getAllCourses } from "../services/courses.js";
 import { Router } from "./router.js";
 import { Guide } from "./guide.js";
 
@@ -44,6 +45,8 @@ export const ApplicationFlow = (function () {
     letterName: null,
     letterFile: null,
     months: null,
+    termsAccepted: false,
+    termsAcceptedAt: null,
     isSubmitting: false
   };
 
@@ -84,6 +87,8 @@ export const ApplicationFlow = (function () {
       letterName: null,
       letterFile: null,
       months: null,
+      termsAccepted: false,
+      termsAcceptedAt: null,
       isSubmitting: false
     });
 
@@ -341,14 +346,26 @@ export const ApplicationFlow = (function () {
             : "") +
           '<div class="label" style="margin:32px 0 8px">School letter</div>' +
           '<p class="tiny" style="margin:0 0 12px">Your placement letter from the school. We verify it.</p>' +
-          '<label class="drop' +
-          (A.letter ? " ok" : "") +
-          '" for="lt">' +
-          (A.letter ? "School letter attached (" + esc(A.letterName) + ")" : "Attach School Letter (PDF / Image)") +
-          "</label>" +
-          '<input id="lt" type="file" accept="image/*,application/pdf" style="display:none" onchange="window.app.takeLetter(this)">' +
-          '<div class="upload-progress" id="up-lt" style="display:none"><div class="upload-progress-bar" id="pb-lt"></div></div>' +
-          '<div class="err" id="e-letter"></div>' +
+          '<div class="upload-box">' +
+          '  <div class="drop' + (A.letter ? " ok" : "") + '" id="drop-zone-lt" onclick="$(\'#lt\').click()">' +
+          '    <div class="drop-left">' +
+          '      <div class="drop-icon">' + (A.letter ? "✓" : "🏫") + '</div>' +
+          '      <div>' +
+          '        <div class="drop-title">' + (A.letter ? "School Letter Attached" : "Official Placement Letter") + '</div>' +
+          '        <div class="drop-desc">' + (A.letter ? esc(A.letterName) : "Attach official letter from your institution (PDF / Image)") + '</div>' +
+          '      </div>' +
+          '    </div>' +
+          '    <button type="button" class="btn primary btn-upload" onclick="event.stopPropagation(); $(\'#lt\').click()">' +
+          (A.letter ? "Change File" : "Choose / Upload Letter") +
+          '    </button>' +
+          '  </div>' +
+          (A.letter && A.letterFile && A.letterFile.type?.startsWith("image/")
+            ? '<div class="receipt-thumb-preview"><img src="' + A.letter + '" alt="Letter preview" /><span class="tiny">' + esc(A.letterName) + '</span></div>'
+            : "") +
+          '  <input id="lt" type="file" accept="image/*,application/pdf" style="display:none" onchange="window.app.takeLetter(this)">' +
+          '  <div class="upload-progress" id="up-lt" style="display:none"><div class="upload-progress-bar" id="pb-lt"></div></div>' +
+          '  <div class="err" id="e-letter"></div>' +
+          '</div>' +
           acts(true, "window.app.aNext()");
         break;
       }
@@ -366,14 +383,33 @@ export const ApplicationFlow = (function () {
           payRow("Amount", N(FEE)) +
           payRow("Use as narration", esc(A.name || "Your full name")) +
           "</div>" +
-          '<label class="drop' +
-          (A.receipt ? " ok" : "") +
-          '" for="rc" style="margin-top:22px">' +
-          (A.receipt ? "Receipt attached (" + esc(A.receiptName) + ")" : "Upload Transfer Receipt (PDF / Image)") +
-          "</label>" +
-          '<input id="rc" type="file" accept="image/*,application/pdf" style="display:none" onchange="window.app.takeReceipt(this)">' +
-          '<div class="upload-progress" id="up-rc" style="display:none"><div class="upload-progress-bar" id="pb-rc"></div></div>' +
-          '<div class="err" id="e-receipt"></div>' +
+          '<div class="upload-box">' +
+          '  <div class="drop' + (A.receipt ? " ok" : "") + '" id="drop-zone-rc" onclick="$(\'#rc\').click()">' +
+          '    <div class="drop-left">' +
+          '      <div class="drop-icon">' + (A.receipt ? "✓" : "📄") + '</div>' +
+          '      <div>' +
+          '        <div class="drop-title">' + (A.receipt ? "Receipt Attached" : "Proof of Payment") + '</div>' +
+          '        <div class="drop-desc">' + (A.receipt ? esc(A.receiptName) : "Upload your transfer receipt or bank slip (PNG, JPG, PDF)") + '</div>' +
+          '      </div>' +
+          '    </div>' +
+          '    <button type="button" class="btn primary btn-upload" onclick="event.stopPropagation(); $(\'#rc\').click()">' +
+          (A.receipt ? "Change Receipt" : "Choose / Upload Receipt") +
+          '    </button>' +
+          '  </div>' +
+          (A.receipt && A.receiptFile && A.receiptFile.type?.startsWith("image/")
+            ? '<div class="receipt-thumb-preview"><img src="' + A.receipt + '" alt="Receipt preview" /><span class="tiny">' + esc(A.receiptName) + '</span></div>'
+            : "") +
+          '  <input id="rc" type="file" accept="image/*,application/pdf" style="display:none" onchange="window.app.takeReceipt(this)">' +
+          '  <div class="upload-progress" id="up-rc" style="display:none"><div class="upload-progress-bar" id="pb-rc"></div></div>' +
+          '  <div class="err" id="e-receipt"></div>' +
+          '</div>' +
+          '<div class="terms-approval" style="margin:22px 0 10px;padding:14px 16px;background:var(--navy-2);border:1px solid var(--line);border-radius:4px">' +
+          '  <label class="terms-label" style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-size:13.5px;line-height:1.5;color:var(--ink)">' +
+          '    <input type="checkbox" id="terms-chk" ' + (A.termsAccepted ? "checked" : "") + ' style="width:18px;height:18px;margin-top:2px;accent-color:var(--orange);flex-shrink:0" onchange="window.app.toggleTerms(this.checked)">' +
+          '    <span>I have read, understood and agree to Hamzury\'s <a href="javascript:void(0)" onclick="window.app.open(\'terms\')" style="color:var(--gold);text-decoration:underline">Terms of Admission & Operational Policies</a> (including the ₦5,000 non-refundable application fee policy and intellectual property ownership standards).</span>' +
+          '  </label>' +
+          '  <div class="err" id="e-terms" style="margin-top:6px"></div>' +
+          '</div>' +
           acts(true, "window.app.aNext()", "I have paid");
         break;
 
@@ -410,7 +446,7 @@ export const ApplicationFlow = (function () {
                 ["software", "Software", 30000, "For a child who likes making things happen on a screen."],
                 ["hardware", "Robotics", 120000, "For a child who likes building things they can hold."]
               ]
-            : TR.map((t) => [t.id, t.nm, t.p, t.fit]);
+            : getAllCourses().map((t) => [t.id, t.nm, t.p, t.fit]);
 
         h +=
           '<div class="q">' +
@@ -542,14 +578,26 @@ export const ApplicationFlow = (function () {
               payRow("Amount", N(due[1])) +
               payRow("Use as narration", esc(A.name || "Your full name")) +
               "</div>" +
-              '<label class="drop' +
-              (A.receipt2 ? " ok" : "") +
-              '" for="rc2" style="margin-top:22px">' +
-              (A.receipt2 ? "Receipt attached (" + esc(A.receiptName2) + ")" : "Upload Transfer Receipt (PDF / Image)") +
-              "</label>" +
-              '<input id="rc2" type="file" accept="image/*,application/pdf" style="display:none" onchange="window.app.takeReceipt2(this)">' +
-              '<div class="upload-progress" id="up-rc2" style="display:none"><div class="upload-progress-bar" id="pb-rc2"></div></div>' +
-              '<div class="err" id="e-receipt2"></div>' +
+              '<div class="upload-box">' +
+              '  <div class="drop' + (A.receipt2 ? " ok" : "") + '" id="drop-zone-rc2" onclick="$(\'#rc2\').click()">' +
+              '    <div class="drop-left">' +
+              '      <div class="drop-icon">' + (A.receipt2 ? "✓" : "📄") + '</div>' +
+              '      <div>' +
+              '        <div class="drop-title">' + (A.receipt2 ? "Receipt Attached" : "Programme Transfer Receipt") + '</div>' +
+              '        <div class="drop-desc">' + (A.receipt2 ? esc(A.receiptName2) : "Upload your transfer receipt or bank slip (PNG, JPG, PDF)") + '</div>' +
+              '      </div>' +
+              '    </div>' +
+              '    <button type="button" class="btn primary btn-upload" onclick="event.stopPropagation(); $(\'#rc2\').click()">' +
+              (A.receipt2 ? "Change Receipt" : "Choose / Upload Receipt") +
+              '    </button>' +
+              '  </div>' +
+              (A.receipt2 && A.receiptFile2 && A.receiptFile2.type?.startsWith("image/")
+                ? '<div class="receipt-thumb-preview"><img src="' + A.receipt2 + '" alt="Receipt preview" /><span class="tiny">' + esc(A.receiptName2) + '</span></div>'
+                : "") +
+              '  <input id="rc2" type="file" accept="image/*,application/pdf" style="display:none" onchange="window.app.takeReceipt2(this)">' +
+              '  <div class="upload-progress" id="up-rc2" style="display:none"><div class="upload-progress-bar" id="pb-rc2"></div></div>' +
+              '  <div class="err" id="e-receipt2"></div>' +
+              '</div>' +
               '<p class="tiny" style="margin-top:14px">Resumption is ' +
               nextIntake() +
               ".</p>"
@@ -663,7 +711,9 @@ export const ApplicationFlow = (function () {
               receipt2: A.receipt2,
               receiptName2: A.receiptName2,
               letter: A.letter,
-              letterName: A.letterName
+              letterName: A.letterName,
+              termsAccepted: A.termsAccepted,
+              termsAcceptedAt: A.termsAcceptedAt
             },
             {
               receipt: A.receiptFile,
@@ -726,9 +776,16 @@ export const ApplicationFlow = (function () {
       if (!ok) return;
     }
 
-    if (id === "fee" && !A.receipt) {
-      setErr("receipt", "Upload your receipt before continuing.");
-      return;
+    if (id === "fee") {
+      if (!A.receipt) {
+        setErr("receipt", "Upload your transfer receipt before continuing.");
+        return;
+      }
+      if (!A.termsAccepted) {
+        const errEl = $("#e-terms");
+        if (errEl) errEl.textContent = "You must review and agree to Hamzury's Terms of Admission to proceed.";
+        return;
+      }
     }
     if (id === "progfee" && progDue()[1] && !A.receipt2) {
       setErr("receipt2", "Upload your receipt before continuing.");
@@ -852,9 +909,13 @@ export const ApplicationFlow = (function () {
     });
   }
 
-  function sendAppWhatsApp() {
-    const text = applicationMessage();
-    window.open("https://wa.me/234" + WHATSAPP.replace(/^0/, "") + "?text=" + encodeURIComponent(text), "_blank", "noopener");
+  function toggleTerms(checked) {
+    A.termsAccepted = Boolean(checked);
+    if (A.termsAccepted) {
+      A.termsAcceptedAt = new Date().toISOString();
+      const errEl = $("#e-terms");
+      if (errEl) errEl.textContent = "";
+    }
   }
 
   return {
@@ -869,6 +930,7 @@ export const ApplicationFlow = (function () {
     takeReceipt,
     takeReceipt2,
     takeLetter,
+    toggleTerms,
     sendAppWhatsApp,
     getState: () => A
   };
