@@ -17,8 +17,19 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
+.top > button {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .top .lockup {
-  height: 22px;
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .topnav {
@@ -248,11 +259,17 @@ main {
 }
 
 .foot .lockup {
-  height: 20px;
-  opacity: 0.62;
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  opacity: 0.75;
   cursor: pointer;
-  padding: 10px;
-  margin: -10px;
+  transition: opacity 0.2s;
+}
+
+.foot .lockup:hover {
+  opacity: 1;
 }
 
 .footlinks {
