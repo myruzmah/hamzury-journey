@@ -203,16 +203,17 @@ window.app = {
   staffGo: () => AdminDashboard.login()
 };
 
-// Initialize views and router on DOM ready
-document.addEventListener("DOMContentLoaded", () => {
+// Initialize views and router on DOM ready (once)
+let initialized = false;
+function bootstrap() {
+  if (initialized) return;
+  initialized = true;
   registerAllViews();
   Router.init();
   paintLandingPage();
-});
+}
 
-// Also initialize immediately if DOM already loaded
+document.addEventListener("DOMContentLoaded", bootstrap);
 if (document.readyState === "interactive" || document.readyState === "complete") {
-  registerAllViews();
-  Router.init();
-  paintLandingPage();
+  bootstrap();
 }

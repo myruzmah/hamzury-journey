@@ -264,3 +264,9 @@ export function exportApplicationsCSV(applications) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Backward compatibility stub for cached browser modules
+ */
+export function createSampleApplicant() {
+  return null;
+}

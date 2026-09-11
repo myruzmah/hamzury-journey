@@ -918,6 +918,13 @@ export const ApplicationFlow = (function () {
     }
   }
 
+  function sendAppWhatsApp() {
+    const text = encodeURIComponent(
+      `Hello Hamzury Admissions, I have submitted my application with Reference: ${A.ref}. My name is ${A.name || ""}.`
+    );
+    window.open(`https://wa.me/234${WHATSAPP.replace(/^0/, "")}?text=${text}`, "_blank");
+  }
+
   return {
     startApp,
     renderStep,
