@@ -1,24 +1,50 @@
 /* ============================================================
    FIRESTORE INITIAL SEEDER & CONNECTION TESTER
+   Reads credentials strictly from local .env
    Run: node scripts/seed.js
    ============================================================ */
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import fs from "fs";
+import path from "path";
+
+// Load .env variables locally
+function loadEnv() {
+  const env = {};
+  const envPath = path.resolve(process.cwd(), ".env");
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, "utf-8").split("\n");
+    for (const line of lines) {
+      const match = line.trim().match(/^([^=]+)=(.*)$/);
+      if (match) {
+        env[match[1].trim()] = match[2].trim().replace(/^["']|["']$/g, "");
+      }
+    }
+  }
+  return env;
+}
+
+const env = loadEnv();
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDYAuexNIfaN3jz3uj-eIbpBjt4nPC3vVs",
-  authDomain: "hamzury-journey.firebaseapp.com",
-  projectId: "hamzury-journey",
-  storageBucket: "hamzury-journey.firebasestorage.app",
-  messagingSenderId: "56612324793",
-  appId: "1:56612324793:web:83a5579224bf5657022268"
+  apiKey: env.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: env.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID || ""
 };
+
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error("❌ Missing VITE_FIREBASE_API_KEY or VITE_FIREBASE_PROJECT_ID in .env");
+  process.exit(1);
+}
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function seed() {
-  console.log("Connecting to Firebase project 'hamzury-journey'...");
+  console.log(`Connecting to Firebase project '${firebaseConfig.projectId}'...`);
 
   try {
     // 1. Seed demo application
@@ -39,7 +65,7 @@ async function seed() {
         applicationFee: {
           amount: 5000,
           status: "verified",
-          receiptUrl: "https://res.cloudinary.com/e8rvl3pz/image/upload/sample.jpg",
+          receiptUrl: `https://res.cloudinary.com/${env.VITE_CLOUDINARY_CLOUD_NAME || "demo"}/image/upload/sample.jpg`,
           receiptName: "moniepoint_receipt.pdf",
           storageProvider: "cloudinary",
           uploadedAt: new Date().toISOString()
@@ -72,24 +98,13 @@ async function seed() {
     });
 
     console.log("✅ Successfully created 'treasury/cohort-2026' in Firestore!");
-    console.log("\n🎉 Firestore is now populated! Refresh your Firebase Console to see the collections.");
+    console.log("\n🎉 Firestore is populated. Refresh your Firebase Console to see the collections.");
     process.exit(0);
   } catch (err) {
     if (err.code === "permission-denied") {
       console.error("\n❌ PERMISSION DENIED (Error code 7):");
-      console.error("Firestore is blocking writes because default security rules are set to: allow read, write: if false;");
-      console.error("To fix this:");
-      console.error("1. In your Firebase Console, click the 'Rules' tab (right next to 'Data').");
-      console.error("2. Change the rule to allow access, e.g.:");
-      console.error("   rules_version = '2';");
-      console.error("   service cloud.firestore {");
-      console.error("     match /databases/{database}/documents {");
-      console.error("       match /{document=**} {");
-      console.error("         allow read, write: if true;");
-      console.error("       }");
-      console.error("     }");
-      console.error("   }");
-      console.error("3. Click 'Publish'. Then run 'node scripts/seed.js' again!");
+      console.error("Firestore is blocking writes because security rules are set to: allow read, write: if false;");
+      console.error("To fix: In Firebase Console -> Cloud Firestore -> Rules, allow read/write and click Publish.");
     } else {
       console.error("Firestore Error:", err);
     }
