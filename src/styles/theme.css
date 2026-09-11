@@ -18,7 +18,7 @@
   --gold-glow: rgba(233, 162, 76, 0.18);
   --green: #2ecc71;
   --error: #ff8f7a;
-  --gut: clamp(22px, 6vw, 88px);
+  --gut: clamp(16px, 4.5vw, 88px);
   --ease: cubic-bezier(0.22, 0.7, 0.28, 1);
 }
 
@@ -42,6 +42,8 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   font-feature-settings: "kern" 1;
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
 }
 
 body.locked {

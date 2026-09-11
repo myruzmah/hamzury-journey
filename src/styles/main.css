@@ -290,24 +290,70 @@ main {
 
 /* ---------- Responsive Breakpoints ---------- */
 @media (max-width: 720px) {
-  .row {
-    grid-template-columns: 28px 1fr auto;
-    gap: 14px;
-    padding: 22px 2px;
+  .top {
+    padding: 14px var(--gut);
+  }
+  .top .lockup {
+    height: 25px;
   }
   .topnav {
-    gap: 16px;
+    gap: 8px;
+  }
+  .topnav button {
+    font-size: 12px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    color: var(--ink);
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .topnav button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--line-2);
   }
   .topnav button:not(.keep) {
     display: none;
   }
+
+  .hero {
+    padding-top: clamp(34px, 7vh, 70px);
+    padding-bottom: clamp(30px, 5vh, 50px);
+  }
+  .hero .display {
+    font-size: clamp(34px, 10vw, 68px);
+    line-height: 0.96;
+    letter-spacing: -0.04em;
+    margin-top: 18px;
+  }
+  .hero .actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .hero .actions .btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    padding: 15px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    min-height: 48px;
+  }
+
   .fact {
     grid-template-columns: 1fr;
     gap: 5px;
-    padding: 15px 0;
+    padding: 14px 0;
   }
   .opt {
-    padding: 19px 4px;
+    padding: 16px 14px;
+    font-size: 14.5px;
+    min-height: 48px;
   }
 
   /* Mobile app screen aesthetic */
@@ -318,7 +364,7 @@ main {
     width: 100%;
     min-height: 100dvh;
     border: 0;
-    padding: 0 20px calc(96px + env(safe-area-inset-bottom));
+    padding: 0 16px calc(88px + env(safe-area-inset-bottom));
     animation: slidein 0.22s var(--ease);
   }
   @keyframes slidein {
@@ -330,39 +376,59 @@ main {
     top: 0;
     background: var(--navy);
     z-index: 5;
-    padding: calc(12px + env(safe-area-inset-top)) 0 12px;
-    margin: 0 -20px 18px;
-    padding-left: 20px;
-    padding-right: 20px;
+    padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+    margin: 0 -16px 16px;
     border-bottom: 1px solid var(--line);
   }
   .iconbtn {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
   }
   .iconbtn.wide {
-    height: 42px;
+    height: 44px;
   }
   .panel .actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
     position: sticky;
     bottom: 0;
-    background: linear-gradient(180deg, transparent, var(--navy) 28%);
-    padding: 18px 0 calc(16px + env(safe-area-inset-bottom));
-    margin-top: 26px;
+    z-index: 10;
+    background: linear-gradient(180deg, rgba(10, 28, 48, 0) 0%, rgba(10, 28, 48, 0.95) 24%, var(--navy) 100%);
+    padding: 14px 0 calc(16px + env(safe-area-inset-bottom));
+    margin-top: 22px;
   }
-  .panel .btn {
+  .panel .actions .btn {
     flex: 1 1 auto;
+    width: 100%;
     text-align: center;
-    padding: 17px 22px;
+    justify-content: center;
+    padding: 15px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    min-height: 48px;
   }
   .big {
-    font-size: clamp(42px, 13vw, 58px);
+    font-size: clamp(38px, 12vw, 54px);
   }
   .q {
-    font-size: clamp(22px, 6vw, 28px);
+    font-size: clamp(20px, 5.5vw, 26px);
   }
-  .hero {
-    padding-top: clamp(40px, 8vh, 90px);
+
+  .foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 32px var(--gut) calc(36px + env(safe-area-inset-bottom));
+  }
+  .footlinks {
+    gap: 12px 18px;
+    width: 100%;
+  }
+  .footlinks button {
+    min-height: 36px;
+    padding: 4px 0;
+    font-size: 13px;
   }
 }
 
@@ -375,9 +441,58 @@ main {
     border-top: 1px solid var(--line);
     padding-left: 0;
   }
-  .flow i {
-    padding: 0 4px;
+
+  /* Clean vertical step flow on phones */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 24px 0 0;
   }
+  .flow i {
+    display: none;
+  }
+  .flow b {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    white-space: normal;
+    padding: 4px 0 4px 22px;
+    font-size: 13.5px;
+    position: relative;
+  }
+  .flow b::before {
+    content: "›";
+    position: absolute;
+    left: 4px;
+    top: 2px;
+    color: var(--orange);
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .flow b.end::before {
+    color: var(--gold);
+  }
+  .flow b span {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .row {
+    grid-template-columns: 24px 1fr 18px;
+    gap: 12px;
+    padding: 18px 2px;
+    min-height: 52px;
+  }
+  .row .t {
+    font-size: 15px;
+  }
+  .row .t .m {
+    font-size: 12.5px;
+    margin-top: 3px;
+  }
+
   /* Values collapsed on phones */
   .values {
     display: none;
@@ -387,6 +502,7 @@ main {
   }
   .vtoggle {
     display: flex;
+    min-height: 44px;
   }
   .values td {
     display: block;
@@ -403,6 +519,10 @@ main {
   }
   .values .vy {
     width: auto;
+    font-size: 14px;
+  }
+  .values .vn {
+    font-size: 13px;
   }
   .values tr {
     display: block;

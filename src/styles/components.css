@@ -994,6 +994,139 @@
   line-height: 1.5;
 }
 
+/* ---------- Mobile Component Optimization ---------- */
+@media (max-width: 600px) {
+  /* Upload Area on mobile */
+  .drop {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 6px;
+  }
+  .drop-left {
+    width: 100%;
+    gap: 12px;
+  }
+  .drop-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 18px;
+  }
+  .drop-title {
+    font-size: 14.5px;
+  }
+  .drop-desc {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .btn-upload {
+    width: 100% !important;
+    text-align: center;
+    justify-content: center;
+    padding: 13px 16px !important;
+    font-size: 13px !important;
+    border-radius: 4px;
+    min-height: 44px;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  .field input, .field select {
+    font-size: 16px !important;
+    min-height: 44px;
+    padding: 10px 0;
+  }
+
+  /* Option cards on mobile */
+  .opts {
+    gap: 8px;
+  }
+  .opt {
+    padding: 15px 14px;
+    min-height: 50px;
+    border-radius: 4px;
+  }
+  .opt .mark {
+    font-size: 14px;
+  }
+
+  /* Payment rows */
+  .pay {
+    padding: 14px 16px;
+    border-radius: 4px;
+  }
+  .payrow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 8px 0;
+  }
+  .payrow .v {
+    font-size: 14.5px;
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  /* Facts table */
+  .facts {
+    padding: 14px 16px;
+  }
+
+  /* Terms Approval Box on mobile */
+  .terms-approval {
+    padding: 14px 14px !important;
+    margin: 18px 0 8px !important;
+  }
+  .terms-label {
+    font-size: 13px !important;
+    gap: 10px !important;
+  }
+  .terms-label input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+  }
+
+  /* Prospectus Mobile */
+  .prospectus-wrap {
+    padding: 4px 0 24px;
+  }
+  .prospectus-hero .actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .prospectus-hero .actions .btn,
+  .prospectus-hero .actions a.btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 14px 18px;
+  }
+  .prospectus-principles {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .siwes-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .prospectus-tracks-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .stage-card, .schedule-box, .prospectus-track-card, .principle-card {
+    padding: 16px;
+    border-radius: 4px;
+  }
+  .stage-head {
+    gap: 6px;
+  }
+  .stage-title {
+    font-size: 16px;
+  }
+}
+
 /* Print Styles for Clean Prospectus PDF */
 @media print {
   body {
