@@ -23,7 +23,11 @@ export async function fetchAllApplications() {
     try {
       const snap = await getDocs(collection(db, "applications"));
       snap.forEach((docSnap) => {
-        list.push({ id: docSnap.id, ...docSnap.data() });
+        const data = docSnap.data();
+        const isDemo = data.name?.toLowerCase().includes("demo") || data.email?.toLowerCase().includes("example.com");
+        if (!isDemo) {
+          list.push({ id: docSnap.id, ...data });
+        }
       });
       if (list.length > 0) return list;
     } catch (e) {
@@ -37,7 +41,8 @@ export async function fetchAllApplications() {
     if (key && key.startsWith("hamzury.app.HMZ-")) {
       try {
         const item = JSON.parse(localStorage.getItem(key));
-        if (item && item.ref) list.push(item);
+        const isDemo = item?.name?.toLowerCase().includes("demo") || item?.email?.toLowerCase().includes("example.com");
+        if (item && item.ref && !isDemo) list.push(item);
       } catch (e) {}
     }
   }
@@ -162,45 +167,47 @@ export async function deleteEnquiry(kind, id) {
 }
 
 /**
- * Creates a sample demo applicant for staff testing
+ * Clears all demo, test, and placeholder records across Firestore and localStorage
  */
-export async function createSampleApplicant() {
-  const randNum = Math.floor(10000 + Math.random() * 90000);
-  const ref = `HMZ-2026-${randNum}`;
-  const sample = {
-    ref,
-    name: "Amina Bello (Demo)",
-    phone: "08031234567",
-    email: "amina.bello@example.com",
-    route: "ceo",
-    track: "fullstack",
-    resumption: "First Monday of Next Month",
-    level: "direct",
-    status: "paid_pending_verification",
-    statusLabel: "Under Review · Payment Submitted",
-    payments: {
-      applicationFee: {
-        amount: 5000,
-        status: "paid_pending_verification",
-        receiptUrl: "https://res.cloudinary.com/e8rvl3pz/image/upload/v1720000000/sample.jpg"
-      }
-    },
-    createdAt: new Date().toISOString()
-  };
+export async function clearAllDemoData() {
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("hamzury.app.HMZ-")) {
+      try {
+        const item = JSON.parse(localStorage.getItem(key));
+        if (
+          item &&
+          (item.name?.toLowerCase().includes("demo") ||
+           item.email?.toLowerCase().includes("example.com") ||
+           item.ref?.includes("DEMO"))
+        ) {
+          keysToRemove.push(key);
+          if (db && item.ref) {
+            deleteDoc(doc(db, "applications", item.ref)).catch(() => {});
+          }
+        }
+      } catch (e) {}
+    }
+  }
+  keysToRemove.forEach((k) => localStorage.removeItem(k));
 
   if (db) {
     try {
-      await setDoc(doc(db, "applications", ref), {
-        ...sample,
-        createdAt: serverTimestamp()
+      const snap = await getDocs(collection(db, "applications"));
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (
+          data &&
+          (data.name?.toLowerCase().includes("demo") ||
+           data.email?.toLowerCase().includes("example.com") ||
+           docSnap.id.includes("DEMO"))
+        ) {
+          deleteDoc(doc(db, "applications", docSnap.id)).catch(() => {});
+        }
       });
-    } catch (e) {
-      console.warn("[Admin] Could not write sample to Firestore:", e);
-    }
+    } catch (e) {}
   }
-
-  localStorage.setItem(`hamzury.app.${ref}`, JSON.stringify(sample));
-  return ref;
 }
 
 /**

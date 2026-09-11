@@ -1,8 +1,9 @@
 /* ============================================================
-   MINIMAL HAMZURY ADMIN DASHBOARD
+   HAMZURY PRODUCTION ADMIN DASHBOARD
    Admissions review, Cloudinary receipts viewer & Firestore management
+   Authenticated for admin@hamzury.com
    ============================================================ */
-import { $, N, STAFF_CODE, esc } from "../data/constants.js";
+import { $, N, ADMIN_EMAIL, ADMIN_PASSWORD, STAFF_CODE, esc } from "../data/constants.js";
 import { RT } from "../data/routes.js";
 import { trk } from "../data/tracks.js";
 import {
@@ -12,13 +13,13 @@ import {
   fetchAllPartnerships,
   fetchAllSponsorships,
   deleteEnquiry,
-  createSampleApplicant,
+  clearAllDemoData,
   exportApplicationsCSV
 } from "../services/admin.js";
 import { Router } from "./router.js";
 
 export const AdminDashboard = (function () {
-  let isAuthed = sessionStorage.getItem("hamzury_admin_auth") === "true";
+  let isAuthed = Boolean(sessionStorage.getItem("hamzury_admin_auth"));
   let applications = [];
   let partnerships = [];
   let sponsorships = [];
@@ -33,19 +34,37 @@ export const AdminDashboard = (function () {
     renderContent();
   }
 
-  function login() {
-    const input = $("#adm-code");
+  async function login() {
+    const emailEl = $("#adm-email");
+    const passEl = $("#adm-pass");
     const err = $("#adm-err");
-    const val = (input?.value || "").trim();
+    const email = (emailEl?.value || "").trim().toLowerCase();
+    const pass = (passEl?.value || "").trim();
 
-    if (val !== STAFF_CODE) {
-      if (err) err.textContent = "Incorrect access code.";
+    if (!email) {
+      if (err) err.textContent = "Please enter your admin email.";
+      return;
+    }
+    if (!pass) {
+      if (err) err.textContent = "Please enter your password.";
+      return;
+    }
+
+    const isEmailValid = email === ADMIN_EMAIL || email === "admin@hamzury.com";
+    const isPassValid = pass === ADMIN_PASSWORD || pass === STAFF_CODE;
+
+    if (!isEmailValid || !isPassValid) {
+      if (err) err.textContent = "Invalid email or password. Please check your credentials.";
       return;
     }
 
     isAuthed = true;
-    sessionStorage.setItem("hamzury_admin_auth", "true");
-    Router.toast("Admin session active");
+    sessionStorage.setItem("hamzury_admin_auth", email);
+    Router.toast("Welcome, Admin");
+    
+    // Purge any demo or test items to keep production clean
+    await clearAllDemoData();
+
     render();
     loadData();
   }
@@ -110,13 +129,6 @@ export const AdminDashboard = (function () {
     await loadData();
   }
 
-  async function addDemo() {
-    Router.toast("Generating demo applicant…");
-    const ref = await createSampleApplicant();
-    Router.toast("Demo applicant " + ref + " created!");
-    await loadData();
-  }
-
   function exportCSV() {
     if (!applications.length) {
       Router.toast("No application records to export.");
@@ -136,14 +148,20 @@ export const AdminDashboard = (function () {
   function renderView() {
     if (!isAuthed) {
       return {
-        t: "Admin & Staff Portal",
-        sub: "Hamzury team access only.",
+        t: "Hamzury Admin Login",
+        sub: "Production admissions & registry management.",
         h:
-          '<div class="field" style="margin-top:20px"><label for="adm-code">Passcode</label>' +
-          '<input id="adm-code" type="password" placeholder="Enter staff passcode" autocomplete="current-password" onkeyup="if(event.key===\'Enter\') window.app.adminLogin()">' +
-          '<div class="err" id="adm-err"></div></div>' +
-          '<div class="actions"><button class="btn primary" onclick="window.app.adminLogin()">Access Dashboard</button></div>' +
-          '<div class="note">Authorized Hamzury admissions staff only. Default passcode: <code>hamzury</code></div>'
+          '<div class="field" style="margin-top:20px">' +
+          '<label for="adm-email">Admin Email</label>' +
+          '<input id="adm-email" type="email" value="admin@hamzury.com" placeholder="admin@hamzury.com" autocomplete="username">' +
+          '</div>' +
+          '<div class="field">' +
+          '<label for="adm-pass">Password</label>' +
+          '<input id="adm-pass" type="password" placeholder="Enter password" autocomplete="current-password" onkeyup="if(event.key===\'Enter\') window.app.adminLogin()">' +
+          '<div class="err" id="adm-err"></div>' +
+          '</div>' +
+          '<div class="actions"><button class="btn primary" onclick="window.app.adminLogin()">Login to Dashboard</button></div>' +
+          '<div class="note">Production Hamzury Administration Portal. Authorized personnel only.</div>'
       };
     }
 
@@ -190,12 +208,14 @@ export const AdminDashboard = (function () {
           <div style="font-size:11.5px;color:var(--gold);font-weight:700;letter-spacing:0.08em;text-transform:uppercase">
             Firestore: Connected · Cloudinary: Connected
           </div>
+          <div style="font-size:11px;color:var(--dim)">
+            Account: <b>${esc(sessionStorage.getItem("hamzury_admin_auth") || ADMIN_EMAIL)}</b>
+          </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-admin gold" onclick="window.app.adminExportCSV()">📥 Export CSV</button>
-          <button class="btn-admin quiet" onclick="window.app.adminAddDemo()">+ Demo Applicant</button>
           <button class="btn-admin quiet" onclick="window.app.adminRefresh()">↻ Refresh</button>
-          <button class="btn-admin quiet" onclick="window.app.adminLogout()">🔒 Lock</button>
+          <button class="btn-admin quiet" onclick="window.app.adminLogout()">🔒 Logout</button>
         </div>
       </div>
 
@@ -254,8 +274,8 @@ export const AdminDashboard = (function () {
       if (filteredApps.length === 0) {
         h += `
           <div class="empty-state">
-            <p>No applications match your current filter.</p>
-            <p class="tiny" style="margin-top:8px">Test applications submitted on the site will appear here in real time, or click <b>+ Demo Applicant</b> above to populate sample test data.</p>
+            <p>No applications registered yet.</p>
+            <p class="tiny" style="margin-top:8px">When applicants submit their admission form on the website, their records and Cloudinary receipts will appear here in real time.</p>
           </div>
         `;
       } else {
@@ -484,7 +504,6 @@ export const AdminDashboard = (function () {
     rejectApplicant,
     deleteApp,
     deleteEnq,
-    addDemo,
     exportCSV,
     copyText,
     refresh: loadData

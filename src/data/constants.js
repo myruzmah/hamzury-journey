@@ -13,6 +13,8 @@ export const BANK = {
 export const WHATSAPP = "08067149356";
 
 export const STAFF_CODE = "hamzury";
+export const ADMIN_EMAIL = (import.meta.env?.VITE_ADMIN_EMAIL || "admin@hamzury.com").toLowerCase();
+export const ADMIN_PASSWORD = import.meta.env?.VITE_ADMIN_PASSWORD || "HamzuryAdmin2026#";
 
 export const N = (n) => "₦" + Number(n).toLocaleString("en-NG");
 

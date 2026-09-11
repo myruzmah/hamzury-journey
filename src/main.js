@@ -190,7 +190,6 @@ window.app = {
   adminReject: (ref) => AdminDashboard.rejectApplicant(ref),
   adminDelete: (ref) => AdminDashboard.deleteApp(ref),
   adminDeleteEnquiry: (kind, id) => AdminDashboard.deleteEnq(kind, id),
-  adminAddDemo: () => AdminDashboard.addDemo(),
   adminExportCSV: () => AdminDashboard.exportCSV(),
   adminCopy: (text, label) => AdminDashboard.copyText(text, label),
   adminRefresh: () => AdminDashboard.refresh(),
