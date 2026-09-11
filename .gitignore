@@ -1,5 +1,27 @@
-# never publish the internal prototype or any local data
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+
+# Local Environment & Secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Never publish the internal prototype or local data
 hamzury-system.html
 *.local.html
 *-backup.html
-.DS_Store
