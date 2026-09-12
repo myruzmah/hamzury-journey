@@ -6,7 +6,7 @@ import { $, N, FEE, BANK, WHATSAPP, mkRef, nextIntake, payRow, fact, esc } from 
 import { TR, trk } from "../data/tracks.js";
 import { RT, EDU, FLOW, STEP_LABEL, PHASE } from "../data/routes.js";
 import { CHK, CHK_FOUNDER, CHK_ECO, CHK_JUNIOR, checkPasses } from "../data/questions.js";
-import { submitApplication } from "../services/applications.js";
+import { submitApplication, saveDraftApplication } from "../services/applications.js";
 import { getAllCourses } from "../services/courses.js";
 import { Router } from "./router.js";
 import { Guide } from "./guide.js";
@@ -47,6 +47,7 @@ export const ApplicationFlow = (function () {
     months: null,
     termsAccepted: false,
     termsAcceptedAt: null,
+    payProgLater: false,
     isSubmitting: false
   };
 
@@ -89,6 +90,7 @@ export const ApplicationFlow = (function () {
       months: null,
       termsAccepted: false,
       termsAcceptedAt: null,
+      payProgLater: false,
       isSubmitting: false
     });
 
@@ -604,7 +606,16 @@ export const ApplicationFlow = (function () {
             : '<div class="note">This fee is confirmed with you directly, before resumption on ' +
               nextIntake() +
               ".</div>") +
-          acts(true, "window.app.aNext()", due[1] ? "I have paid" : "Continue");
+          (due[1]
+            ? '<div class="actions" style="margin-top:28px">' +
+              '<button class="btn quiet" onclick="window.app.aBack()">Back</button>' +
+              '<button class="btn quiet" onclick="window.app.submitPayLater()" id="btn-pay-later">Pay on Resumption & Submit</button>' +
+              '<button class="btn primary" onclick="window.app.submitWithProgReceipt()" id="btn-pay-prog">' +
+              (A.receipt2 ? "Submit With Receipt" : "I Have Paid Programme Fee") +
+              '</button></div>'
+            : '<div class="actions" style="margin-top:28px">' +
+              '<button class="btn quiet" onclick="window.app.aBack()">Back</button>' +
+              '<button class="btn primary" onclick="window.app.submitPayLater()">Complete & Submit Application</button></div>');
         break;
       }
 
@@ -636,25 +647,30 @@ export const ApplicationFlow = (function () {
           '<div class="sliphead"><span>Hamzury Innovation Hub</span><span id="slip-ref">' +
           esc(A.ref) +
           "</span></div>" +
-          '<h2 style="margin:18px 0 4px">Application submitted</h2>' +
+          '<div style="margin:16px 0 6px;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(233,162,76,0.15);border:1px solid var(--gold);color:var(--gold);border-radius:16px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase">✓ Registration Successful</div>' +
+          '<h2 style="margin:8px 0 4px">Application Submitted</h2>' +
           '<p class="sub" style="margin-bottom:20px">' +
-          esc(A.name || "") +
+          esc(A.name || "Applicant") +
           "</p>" +
           '<dl class="facts">' +
+          fact("Reference", '<strong style="color:var(--gold)">' + esc(A.ref) + '</strong>') +
+          fact("Applicant", esc(A.name || "—") + (A.phone ? " · " + esc(A.phone) : "")) +
+          fact("Email", esc(A.email || "—")) +
           fact("Route", esc((RT[A.route] || {}).t || "—")) +
           (track ? fact("Programme", esc(track)) : "") +
           fact("Starting point", esc(startingPoint())) +
           (A.route === "siwes" && A.months ? fact("Placement", A.months + " month" + (A.months === "1" ? "" : "s")) : "") +
+          (A.route === "siwes" && A.letterName ? fact("School Letter", esc(A.letterName) + " (Attached)") : "") +
           fact("Resumption", nextIntake()) +
           "</dl>" +
-          '<div class="label" style="margin:26px 0 6px">Payments</div>' +
-          '<div class="amt"><div class="l">Application fee</div><div class="v later">' +
+          '<div class="label" style="margin:26px 0 6px">Payment Breakdown</div>' +
+          '<div class="amt"><div class="l">Application fee</div><div class="v ok">' +
           N(FEE) +
-          " — paid</div></div>" +
+          " — Paid (Receipt attached)</div></div>" +
           '<div class="amt"><div class="l">' +
           esc(due[0]) +
-          '</div><div class="v later">' +
-          (due[1] ? N(due[1]) + " — paid" : "Confirmed with you") +
+          '</div><div class="v ' + (A.receipt2 ? "ok" : "later") + '">' +
+          (A.receipt2 ? (due[1] ? N(due[1]) + " — Paid (Receipt attached)" : "Evidence attached") : (due[1] ? N(due[1]) + " — Payable before resumption" : "Confirmed with you")) +
           "</div></div>" +
           (remaining
             ? '<div class="amt"><div class="l">' +
@@ -664,17 +680,20 @@ export const ApplicationFlow = (function () {
               N(remaining) +
               " — later</div></div>"
             : "") +
-          '<p class="tiny" style="margin-top:26px">Payment evidence is verified in Firebase and checked by staff. Admission is not automatic.</p>' +
+          '<p class="tiny" style="margin-top:20px">Your payment proof and application files are verified by Hamzury staff. Admission is not automatic.</p>' +
           "</div>" +
-          '<div class="note ok" style="border-color:var(--gold)">Thank you. Your records have been saved securely. ' +
-          "We will contact you on " +
-          esc(A.phone || "the number you provided") +
-          " once payment is verified. Quote your reference <b>" +
+          '<div class="note ok" style="border-color:var(--gold);margin-top:16px">Thank you, <b>' +
+          esc(A.name || "Applicant") +
+          '</b>. Your records have been saved securely in our admissions database. ' +
+          "Staff will review your evidence and reach you at <b>" +
+          esc(A.phone || "the phone number provided") +
+          "</b>. Quote your reference <b>" +
           esc(A.ref) +
-          "</b> to check status at any time.</div>" +
-          '<div class="actions">' +
-          '<button class="btn primary" onclick="window.print()">Print or save as PDF</button>' +
+          "</b> to check your admission status anytime.</div>" +
+          '<div class="actions" style="margin-top:24px">' +
+          '<button class="btn primary" onclick="window.print()">Print / Save as PDF</button>' +
           '<button class="btn quiet" onclick="window.app.sendAppWhatsApp()">Message on WhatsApp</button>' +
+          '<button class="btn quiet" onclick="window.app.open(\'login\')">Check Status</button>' +
           '<button class="btn quiet" onclick="window.app.close()">Done</button>' +
           "</div>";
 
@@ -786,10 +805,27 @@ export const ApplicationFlow = (function () {
         if (errEl) errEl.textContent = "You must review and agree to Hamzury's Terms of Admission to proceed.";
         return;
       }
+      if (!A.ref) A.ref = mkRef();
+      saveDraftApplication({
+        ref: A.ref,
+        name: A.name,
+        email: A.email,
+        phone: A.phone,
+        location: A.location,
+        route: A.route,
+        track: A.track,
+        months: A.months,
+        letter: A.letter,
+        letterName: A.letterName,
+        receipt: A.receipt,
+        receiptName: A.receiptName
+      });
     }
-    if (id === "progfee" && progDue()[1] && !A.receipt2) {
-      setErr("receipt2", "Upload your receipt before continuing.");
-      return;
+    if (id === "progfee") {
+      if (progDue()[1] && !A.receipt2 && !A.payProgLater) {
+        setErr("receipt2", "Upload your receipt, or choose 'Pay on Resumption & Submit'.");
+        return;
+      }
     }
     if (id === "placement") {
       if (!A.months) {
@@ -939,6 +975,29 @@ export const ApplicationFlow = (function () {
     if (el) el.click();
   }
 
+  function submitPayLater() {
+    A.payProgLater = true;
+    A.receipt2 = null;
+    A.receiptFile2 = null;
+    const slipIdx = currentFlow().indexOf("slip");
+    if (slipIdx !== -1) A.s = slipIdx;
+    else A.s++;
+    renderStep();
+  }
+
+  function submitWithProgReceipt() {
+    const due = progDue();
+    if (due[1] && !A.receipt2) {
+      setErr("receipt2", "Please attach your transfer receipt, or choose 'Pay on Resumption & Submit'.");
+      return;
+    }
+    A.payProgLater = false;
+    const slipIdx = currentFlow().indexOf("slip");
+    if (slipIdx !== -1) A.s = slipIdx;
+    else A.s++;
+    renderStep();
+  }
+
   return {
     startApp,
     renderStep,
@@ -955,6 +1014,8 @@ export const ApplicationFlow = (function () {
     sendAppWhatsApp,
     handleDrop,
     pickFile,
+    submitPayLater,
+    submitWithProgReceipt,
     getState: () => A
   };
 })();

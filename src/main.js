@@ -181,6 +181,8 @@ window.app = {
   sendAppWhatsApp: () => ApplicationFlow.sendAppWhatsApp(),
   handleDrop: (e, id) => ApplicationFlow.handleDrop(e, id),
   pickFile: (id) => ApplicationFlow.pickFile(id),
+  submitPayLater: () => ApplicationFlow.submitPayLater(),
+  submitWithProgReceipt: () => ApplicationFlow.submitWithProgReceipt(),
 
   // Enquiries & Status
   sendEnquiry: (k) => handleEnquirySubmission(k),

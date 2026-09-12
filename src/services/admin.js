@@ -17,35 +17,42 @@ import {
  * Fetches all applications from Cloud Firestore
  */
 export async function fetchAllApplications() {
-  const list = [];
+  const map = new Map();
 
-  if (db) {
-    try {
-      const snap = await getDocs(collection(db, "applications"));
-      snap.forEach((docSnap) => {
-        const data = docSnap.data();
-        const isDemo = data.name?.toLowerCase().includes("demo") || data.email?.toLowerCase().includes("example.com");
-        if (!isDemo) {
-          list.push({ id: docSnap.id, ...data });
-        }
-      });
-      if (list.length > 0) return list;
-    } catch (e) {
-      console.warn("[Admin] Firestore query failed, checking local backup:", e);
-    }
-  }
-
-  // Check local storage backup if Firestore returns empty or permission denied
+  // 1. Read local storage backup first for immediate availability
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key && key.startsWith("hamzury.app.HMZ-")) {
       try {
         const item = JSON.parse(localStorage.getItem(key));
-        const isDemo = item?.name?.toLowerCase().includes("demo") || item?.email?.toLowerCase().includes("example.com");
-        if (item && item.ref && !isDemo) list.push(item);
+        if (item && item.ref && !item.name?.includes("Amina Bello (Demo)")) {
+          map.set(item.ref, item);
+        }
       } catch (e) {}
     }
   }
+
+  // 2. Overlay Cloud Firestore records
+  if (db) {
+    try {
+      const snap = await getDocs(collection(db, "applications"));
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data && data.ref && !data.name?.includes("Amina Bello (Demo)")) {
+          map.set(data.ref, { id: docSnap.id, ...data });
+        }
+      });
+    } catch (e) {
+      console.warn("[Admin] Firestore query failed, using local backup:", e);
+    }
+  }
+
+  const list = Array.from(map.values());
+  list.sort((a, b) => {
+    const ta = new Date(a.createdAt || 0).getTime();
+    const tb = new Date(b.createdAt || 0).getTime();
+    return tb - ta;
+  });
 
   return list;
 }

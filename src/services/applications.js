@@ -59,12 +59,15 @@ export async function submitApplication(appData, files = {}, onUploadProgress = 
     }
   }
 
+  const nowIso = new Date().toISOString();
+  const hasProgReceipt = Boolean(uploadedUrls.receipt2Url || appData.receipt2);
+
   const documentPayload = {
     ref: reference,
     status: "submitted",
     statusLabel: "Submitted · Payment under verification",
-    createdAt: db ? serverTimestamp() : new Date().toISOString(),
-    updatedAt: db ? serverTimestamp() : new Date().toISOString(),
+    createdAt: nowIso,
+    updatedAt: nowIso,
     name: appData.name || "",
     email: appData.email || "",
     phone: appData.phone || "",
@@ -80,17 +83,17 @@ export async function submitApplication(appData, files = {}, onUploadProgress = 
         status: "paid_pending_verification",
         receiptUrl: uploadedUrls.receiptUrl || appData.receipt || null,
         receiptName: appData.receiptName || null,
-        storageProvider: "cloudinary",
-        uploadedAt: new Date().toISOString()
+        storageProvider: uploadedUrls.receiptUrl ? "cloudinary" : (appData.receipt ? "local" : null),
+        uploadedAt: nowIso
       },
       programmeFee: {
         amount: appData.progDueAmount || null,
         title: appData.progDueTitle || "",
-        status: appData.progDueAmount ? "paid_pending_verification" : "pending",
+        status: hasProgReceipt ? "paid_pending_verification" : "pending",
         receiptUrl: uploadedUrls.receipt2Url || appData.receipt2 || null,
         receiptName: appData.receiptName2 || null,
-        storageProvider: "cloudinary",
-        uploadedAt: appData.progDueAmount ? new Date().toISOString() : null
+        storageProvider: uploadedUrls.receipt2Url ? "cloudinary" : (appData.receipt2 ? "local" : null),
+        uploadedAt: hasProgReceipt ? nowIso : null
       }
     },
     guardian: appData.route === "junior" ? {
@@ -112,7 +115,7 @@ export async function submitApplication(appData, files = {}, onUploadProgress = 
       months: appData.months || "1",
       letterUrl: uploadedUrls.letterUrl || appData.letter || null,
       letterName: appData.letterName || null,
-      storageProvider: "cloudinary"
+      storageProvider: uploadedUrls.letterUrl ? "cloudinary" : (appData.letter ? "local" : null)
     } : null
   };
 
@@ -120,13 +123,20 @@ export async function submitApplication(appData, files = {}, onUploadProgress = 
   try {
     localStorage.setItem(`hamzury.app.${reference}`, JSON.stringify(documentPayload));
     localStorage.setItem("hamzury.lastAppRef", reference);
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Could not save to localStorage:", e);
+  }
 
   // Save to Cloud Firestore
   if (db) {
     try {
       const appDocRef = doc(db, "applications", reference);
-      await setDoc(appDocRef, documentPayload, { merge: true });
+      const firestoreData = {
+        ...documentPayload,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      await setDoc(appDocRef, firestoreData, { merge: true });
       console.info("[Firestore] Application saved with ref:", reference);
     } catch (firestoreError) {
       console.error("[Firestore] Error saving application document:", firestoreError);
@@ -134,6 +144,43 @@ export async function submitApplication(appData, files = {}, onUploadProgress = 
   }
 
   return documentPayload;
+}
+
+/**
+ * Saves a draft application to localStorage when application fee is paid
+ */
+export function saveDraftApplication(appData) {
+  if (!appData || !appData.ref) return;
+  const nowIso = new Date().toISOString();
+  const draft = {
+    ref: appData.ref,
+    status: "draft_fee_paid",
+    statusLabel: "Draft · Application Fee Attached",
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    name: appData.name || "",
+    email: appData.email || "",
+    phone: appData.phone || "",
+    location: appData.location || "",
+    route: appData.route || "",
+    track: appData.track || null,
+    months: appData.months || null,
+    letterUrl: appData.letter || null,
+    letterName: appData.letterName || null,
+    payments: {
+      applicationFee: {
+        amount: 5000,
+        status: "paid_pending_verification",
+        receiptUrl: appData.receipt || null,
+        receiptName: appData.receiptName || null,
+        uploadedAt: nowIso
+      }
+    }
+  };
+  try {
+    localStorage.setItem(`hamzury.app.${appData.ref}`, JSON.stringify(draft));
+    localStorage.setItem("hamzury.lastAppRef", appData.ref);
+  } catch (e) {}
 }
 
 /**
