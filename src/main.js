@@ -185,6 +185,7 @@ window.app = {
   submitPayLater: () => ApplicationFlow.submitPayLater(),
   submitWithProgReceipt: () => ApplicationFlow.submitWithProgReceipt(),
   retrySubmit: () => ApplicationFlow.retrySubmit(),
+  printSlip: () => ApplicationFlow.printSlip(),
 
   // Enquiries & Status
   sendEnquiry: (k) => handleEnquirySubmission(k),

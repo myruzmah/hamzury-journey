@@ -1129,29 +1129,109 @@
 
 /* Print Styles for Clean Prospectus PDF */
 @media print {
-  body {
-    background: #fff !important;
-    color: #111 !important;
+  /* ------------------------------------------------------------
+     PRINTING AN APPLICATION SLIP
+
+     Only the applicant's own slip may appear on the page. Everything
+     else - the landing page, navigation, buttons - is removed, so each
+     applicant's PDF contains their personal details and nothing else.
+     ------------------------------------------------------------ */
+  @page {
+    margin: 14mm;
   }
 
-  .panelbar, .foot, .topnav, .actions, .toast, .btn, button {
+  html, body {
+    background: #fff !important;
+    color: #111 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* The landing page must never appear in an applicant's document. */
+  #main,
+  .panelbar, .foot, .topnav, .toast {
     display: none !important;
   }
 
+  /* body.locked fixes the page while the modal is open; undo for print. */
+  body.locked {
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  /* Show the slip even though the modal is a fixed overlay on screen. */
   .modal {
     position: static !important;
     display: block !important;
     background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    inset: auto !important;
+    z-index: auto !important;
+  }
+
+  .modal[hidden] {
+    display: none !important;
   }
 
   .panel {
     border: none !important;
     padding: 0 !important;
     max-width: 100% !important;
+    max-height: none !important;
     min-height: auto !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    background: transparent !important;
     color: #111 !important;
+    transform: none !important;
   }
 
+  /* Interactive controls carry no meaning on paper. */
+  .actions, .btn, button, .upload, .upload-progress, #save-state {
+    display: none !important;
+  }
+
+  /* The slip itself, rendered for paper. */
+  .slip {
+    background: #fff !important;
+    border: 1px solid #bbb !important;
+    color: #111 !important;
+    break-inside: avoid;
+  }
+
+  .slip .sliphead {
+    border-bottom: 1px solid #bbb !important;
+    color: #000 !important;
+  }
+
+  .success-mark {
+    border-color: #888 !important;
+    background: #f4f4f4 !important;
+    color: #000 !important;
+  }
+
+  .facts dt, .label, .tiny, .sub, p {
+    color: #333 !important;
+  }
+
+  .facts dd, .amt .l, .amt .v, h1, h2, h3, b, strong {
+    color: #000 !important;
+  }
+
+  .facts > div, .amt {
+    border-color: #ddd !important;
+    break-inside: avoid;
+  }
+
+  .note {
+    background: #fafafa !important;
+    border: 1px solid #ccc !important;
+    color: #222 !important;
+    break-inside: avoid;
+  }
+
+  /* Non-slip views that are still worth printing (prospectus, terms). */
   .principle-card, .stage-card, .siwes-item, .prospectus-track-card, .schedule-box {
     background: #fafafa !important;
     border: 1px solid #ddd !important;
@@ -1159,7 +1239,7 @@
     break-inside: avoid;
   }
 
-  .stage-title, .principle-card b, .siwes-item .v, h1, h2, h3 {
+  .stage-title, .principle-card b, .siwes-item .v {
     color: #000 !important;
   }
 
@@ -1169,8 +1249,8 @@
     background: #eee !important;
   }
 
-  .sub, .prospectus-list, .schedule-row .desc, p {
-    color: #333 !important;
+  a {
+    color: #111 !important;
+    text-decoration: none !important;
   }
 }
-

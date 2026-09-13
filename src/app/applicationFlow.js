@@ -718,7 +718,7 @@ export const ApplicationFlow = (function () {
           "</b> \u2014 you can use it to check your admission status at any time.</div>" +
           '<div id="save-state" class="note" style="margin-top:16px">Saving your application to the admissions database…</div>' +
           '<div class="actions" style="margin-top:24px">' +
-          '<button class="btn primary" onclick="window.print()">Print / Save as PDF</button>' +
+          '<button class="btn primary" onclick="window.app.printSlip()">Print / Save as PDF</button>' +
           '<button class="btn quiet" onclick="window.app.sendAppWhatsApp()">Message on WhatsApp</button>' +
           '<button class="btn quiet" onclick="window.app.open(\'login\')">Check Status</button>' +
           '<button class="btn quiet" onclick="window.app.close()">Done</button>' +
@@ -840,6 +840,34 @@ export const ApplicationFlow = (function () {
       // Always clear the latch so a failed save can be retried.
       A.isSubmitting = false;
     }
+  }
+
+  /* ------------------------------------------------------------
+     Prints the applicant's slip.
+
+     The browser names a saved PDF after document.title, so it is set
+     to this applicant's own name and reference. Without this every
+     applicant's download is named identically and looks like the
+     same document.
+     ------------------------------------------------------------ */
+  function printSlip() {
+    const previousTitle = document.title;
+    const who = (A.name || "Applicant").replace(/[\/:*?"<>|]+/g, "").trim();
+    const parts = ["Hamzury Application"];
+    if (A.ref) parts.push(A.ref);
+    if (who) parts.push(who);
+    document.title = parts.join(" - ");
+
+    const restore = () => {
+      document.title = previousTitle;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+
+    window.print();
+
+    // Safari and some mobile browsers never fire afterprint.
+    setTimeout(restore, 3000);
   }
 
   function retrySubmit() {
@@ -1113,6 +1141,7 @@ export const ApplicationFlow = (function () {
     submitPayLater,
     submitWithProgReceipt,
     retrySubmit,
+    printSlip,
     getState: () => A
   };
 })();
