@@ -22,6 +22,7 @@ import {
   deleteCourse,
   fetchCustomCourses
 } from "../services/courses.js";
+import { runDiagnostics } from "../services/diagnostics.js";
 import { Router } from "./router.js";
 
 export const AdminDashboard = (function () {
@@ -30,7 +31,9 @@ export const AdminDashboard = (function () {
   let partnerships = [];
   let sponsorships = [];
   let courses = [];
-  let currentTab = "apps"; // 'apps' | 'enquiries' | 'courses'
+  let currentTab = "apps"; // 'apps' | 'enquiries' | 'courses' | 'system'
+  let diagnostics = null;
+  let diagnosticsRunning = false;
   let filterStatus = "all"; // 'all' | 'review' | 'verified' | 'rejected'
   let searchQuery = "";
 
@@ -289,6 +292,9 @@ export const AdminDashboard = (function () {
         <button class="admin-tab ${currentTab === "courses" ? "active" : ""}" onclick="window.app.adminTab('courses')">
           Courses & Programmes (${courses.length})
         </button>
+        <button class="admin-tab ${currentTab === "system" ? "active" : ""}" onclick="window.app.adminTab('system')">
+          System Check
+        </button>
       </div>
     `;
 
@@ -325,9 +331,18 @@ export const AdminDashboard = (function () {
           const isVerified = app.status === "verified" || app.status === "accepted";
           const isRejected = app.status === "rejected";
 
+          const isDraft = app.status === "draft_fee_paid";
+
           let badge = '<span class="badge review">Under Review</span>';
+          if (isDraft) badge = '<span class="badge review">Incomplete · Not Submitted</span>';
           if (isVerified) badge = '<span class="badge verified">Verified</span>';
           if (isRejected) badge = '<span class="badge rejected">Rejected</span>';
+
+          // Attachments the applicant provided that never reached storage.
+          const pendingUploads = Array.isArray(app.attachmentsPendingUpload)
+            ? app.attachmentsPendingUpload
+            : [];
+          const uploadLabel = { receipt: "Fee receipt", receipt2: "Programme receipt", letter: "School letter" };
 
           const appReceipt = app.payments?.applicationFee?.receiptUrl;
           const progReceipt = app.payments?.programmeFee?.receiptUrl;
@@ -378,6 +393,17 @@ export const AdminDashboard = (function () {
                   <dd>${app.payments?.applicationFee?.status === "verified" ? "✓ Verified" : (isRejected ? "Rejected" : "Paid · Pending Check")}</dd>
                 </div>
               </dl>
+
+              ${
+                isDraft
+                  ? '<div class="note" style="margin:12px 0">This applicant attached their fee receipt but did not reach the final step. Follow up to complete the submission.</div>'
+                  : ""
+              }
+              ${
+                pendingUploads.length
+                  ? `<div class="note" style="margin:12px 0">⚠️ Could not store: ${pendingUploads.map((k) => esc(uploadLabel[k] || k)).join(", ")}. Request ${pendingUploads.length === 1 ? "this file" : "these files"} from the applicant directly.</div>`
+                  : ""
+              }
 
               <div class="admin-docs">
                 <span style="font-size:11px;text-transform:uppercase;color:var(--dim);font-weight:700">Receipts & Evidence:</span>

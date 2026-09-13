@@ -1,6 +1,11 @@
 /* ============================================================
    CLOUDINARY STORAGE SERVICE
    Direct unsigned uploads for receipts and school letters
+
+   On failure this rejects rather than resolving with a base64
+   data URL. A data URL is not durable storage: it is far too
+   large for a Firestore document (1MiB limit) and previously
+   caused the whole application write to fail silently.
    ============================================================ */
 const env = import.meta.env || {};
 
@@ -17,7 +22,7 @@ export const isCloudinaryConfigured = () => {
 };
 
 /**
- * Uploads a file directly to Cloudinary with real-time progress reporting
+ * Uploads a file directly to Cloudinary with real-time progress reporting.
  * @param {File} file - The file to upload
  * @param {string} folder - Destination folder (e.g. hamzury/applications/HMZ-2026-XXXXX)
  * @param {function} onProgress - Progress callback (percentage: 0-100)
@@ -25,19 +30,12 @@ export const isCloudinaryConfigured = () => {
  */
 export function uploadToCloudinary(file, folder = "hamzury/applications", onProgress = null) {
   return new Promise((resolve, reject) => {
-    // If Cloudinary credentials are not yet set in .env, fallback to Base64 data URL
     if (!isCloudinaryConfigured()) {
-      console.warn(
-        "[Cloudinary] Cloud name or upload preset not set in .env. Falling back to local data URL. See CLOUDINARY_SETUP.md."
+      reject(
+        new Error(
+          "Cloudinary is not configured. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET. See CLOUDINARY_SETUP.md."
+        )
       );
-      if (onProgress) onProgress(50);
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (onProgress) onProgress(100);
-        resolve(reader.result);
-      };
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
       return;
     }
 
@@ -51,12 +49,13 @@ export function uploadToCloudinary(file, folder = "hamzury/applications", onProg
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
+    // An upload must not hang forever and block the applicant.
+    xhr.timeout = 120000;
 
     if (xhr.upload && onProgress) {
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          onProgress(percent);
+          onProgress(Math.round((event.loaded / event.total) * 100));
         }
       };
     }
@@ -65,6 +64,10 @@ export function uploadToCloudinary(file, folder = "hamzury/applications", onProg
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const response = JSON.parse(xhr.responseText);
+          if (!response.secure_url) {
+            reject(new Error("Cloudinary response contained no secure_url"));
+            return;
+          }
           console.info("[Cloudinary] Upload success:", response.secure_url);
           if (onProgress) onProgress(100);
           resolve(response.secure_url);
@@ -73,19 +76,13 @@ export function uploadToCloudinary(file, folder = "hamzury/applications", onProg
         }
       } else {
         console.error("[Cloudinary] Upload failed with status", xhr.status, xhr.responseText);
-        // Fallback to data URL on preset misconfiguration so user is never blocked
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
+        reject(new Error(`Cloudinary upload failed with status ${xhr.status}`));
       }
     };
 
-    xhr.onerror = () => {
-      console.error("[Cloudinary] Network error, falling back to data URL");
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(file);
-    };
+    xhr.onerror = () => reject(new Error("Network error during Cloudinary upload"));
+    xhr.ontimeout = () => reject(new Error("Cloudinary upload timed out"));
+    xhr.onabort = () => reject(new Error("Cloudinary upload aborted"));
 
     xhr.send(formData);
   });

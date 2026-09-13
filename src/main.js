@@ -15,6 +15,7 @@ import { ApplicationFlow } from "./app/applicationFlow.js";
 import { StatusChecker } from "./app/statusChecker.js";
 import { AdminDashboard } from "./app/adminDashboard.js";
 import { registerAllViews, handleEnquirySubmission } from "./app/views.js";
+import { retryPendingSubmissions } from "./services/applications.js";
 
 // Staff tap counter
 let staffTaps = 0;
@@ -183,6 +184,7 @@ window.app = {
   pickFile: (id) => ApplicationFlow.pickFile(id),
   submitPayLater: () => ApplicationFlow.submitPayLater(),
   submitWithProgReceipt: () => ApplicationFlow.submitWithProgReceipt(),
+  retrySubmit: () => ApplicationFlow.retrySubmit(),
 
   // Enquiries & Status
   sendEnquiry: (k) => handleEnquirySubmission(k),
@@ -219,6 +221,13 @@ function bootstrap() {
   registerAllViews();
   Router.init();
   paintLandingPage();
+
+  // Re-send any application whose database write previously failed.
+  retryPendingSubmissions()
+    .then((n) => {
+      if (n > 0) Router.toast(n + " saved application" + (n === 1 ? "" : "s") + " synced to admissions.");
+    })
+    .catch(() => {});
 }
 
 document.addEventListener("DOMContentLoaded", bootstrap);

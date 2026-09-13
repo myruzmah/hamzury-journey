@@ -48,13 +48,33 @@ export const ApplicationFlow = (function () {
     termsAccepted: false,
     termsAcceptedAt: null,
     payProgLater: false,
-    isSubmitting: false
+    isSubmitting: false,
+    submitted: false
   };
 
   const currentFlow = () => FLOW[A.route] || FLOW.DEFAULT;
   const currentStepId = () => currentFlow()[A.s];
 
   function startApp(route = "ceo", track = null) {
+    /* An application that is already on the slip must not be silently
+       discarded. Returning to the flow re-opens the completed slip so the
+       applicant keeps their reference instead of landing on a blank form. */
+    if (A.ref && currentStepId() === "slip") {
+      Router.open("apply");
+      return;
+    }
+
+    /* Guard against wiping a part-finished application: once the
+       application fee receipt is attached a reference exists, and
+       restarting would orphan it. */
+    if (A.ref && A.receipt && !A.submitted) {
+      const sameRoute = !route || route === A.route;
+      if (sameRoute) {
+        Router.open("apply");
+        return;
+      }
+    }
+
     Object.assign(A, {
       s: 0,
       ei: 0,
@@ -91,7 +111,8 @@ export const ApplicationFlow = (function () {
       termsAccepted: false,
       termsAcceptedAt: null,
       payProgLater: false,
-      isSubmitting: false
+      isSubmitting: false,
+      submitted: false
     });
 
     const guideState = Guide.getState();
@@ -690,6 +711,7 @@ export const ApplicationFlow = (function () {
           "</b>. Quote your reference <b>" +
           esc(A.ref) +
           "</b> to check your admission status anytime.</div>" +
+          '<div id="save-state" class="note" style="margin-top:16px">Saving your application to the admissions database…</div>' +
           '<div class="actions" style="margin-top:24px">' +
           '<button class="btn primary" onclick="window.print()">Print / Save as PDF</button>' +
           '<button class="btn quiet" onclick="window.app.sendAppWhatsApp()">Message on WhatsApp</button>' +
@@ -697,58 +719,125 @@ export const ApplicationFlow = (function () {
           '<button class="btn quiet" onclick="window.app.close()">Done</button>' +
           "</div>";
 
-        // Background submission to Firebase
-        if (!A.isSubmitting) {
-          A.isSubmitting = true;
-          submitApplication(
-            {
-              ref: A.ref,
-              name: A.name,
-              email: A.email,
-              phone: A.phone,
-              location: A.location,
-              route: A.route,
-              track: A.track,
-              level: guideState.level,
-              age: guideState.age,
-              resumption: nextIntake(),
-              progDueAmount: due[1],
-              progDueTitle: due[0],
-              gname: A.gname,
-              grel: A.grel,
-              gphone: A.gphone,
-              gemail: A.gemail,
-              gemergency: A.gemergency,
-              consent: A.consent,
-              dob: A.dob,
-              school: A.school,
-              cls: A.cls,
-              interests: A.interests,
-              months: A.months,
-              receipt: A.receipt,
-              receiptName: A.receiptName,
-              receipt2: A.receipt2,
-              receiptName2: A.receiptName2,
-              letter: A.letter,
-              letterName: A.letterName,
-              termsAccepted: A.termsAccepted,
-              termsAcceptedAt: A.termsAcceptedAt
-            },
-            {
-              receipt: A.receiptFile,
-              receipt2: A.receiptFile2,
-              letter: A.letterFile
-            }
-          ).catch((err) => {
-            console.error("Submission error:", err);
-          });
-        }
+        // Persist the application. Runs once per reference; retryable on failure.
+        if (!A.submitted && !A.isSubmitting) persistApplication();
 
         break;
       }
     }
 
     box.innerHTML = h;
+  }
+
+  /* ------------------------------------------------------------
+     Builds the record sent to the admissions database.
+     ------------------------------------------------------------ */
+  function buildSubmission() {
+    const guideState = Guide.getState();
+    const due = progDue();
+    return {
+      ref: A.ref,
+      name: A.name,
+      email: A.email,
+      phone: A.phone,
+      location: A.location,
+      route: A.route,
+      track: A.track,
+      level: guideState.level,
+      age: guideState.age,
+      resumption: nextIntake(),
+      progDueAmount: due[1],
+      progDueTitle: due[0],
+      gname: A.gname,
+      grel: A.grel,
+      gphone: A.gphone,
+      gemail: A.gemail,
+      gemergency: A.gemergency,
+      consent: A.consent,
+      dob: A.dob,
+      school: A.school,
+      cls: A.cls,
+      interests: A.interests,
+      months: A.months,
+      receipt: A.receipt,
+      receiptName: A.receiptName,
+      receipt2: A.receipt2,
+      receiptName2: A.receiptName2,
+      letter: A.letter,
+      letterName: A.letterName,
+      termsAccepted: A.termsAccepted,
+      termsAcceptedAt: A.termsAcceptedAt
+    };
+  }
+
+  function setSaveState(html, cls) {
+    const el = $("#save-state");
+    if (!el) return;
+    el.className = "note" + (cls ? " " + cls : "");
+    el.innerHTML = html;
+  }
+
+  /* ------------------------------------------------------------
+     Sends the application to Firestore and reports the outcome
+     on the slip. Unlike the previous fire-and-forget call, a
+     failure is visible and can be retried.
+     ------------------------------------------------------------ */
+  async function persistApplication() {
+    if (A.isSubmitting || A.submitted) return;
+    if (!A.ref) A.ref = mkRef();
+
+    A.isSubmitting = true;
+    setSaveState("Saving your application to the admissions database…");
+
+    try {
+      const result = await submitApplication(buildSubmission(), {
+        receipt: A.receiptFile,
+        receipt2: A.receiptFile2,
+        letter: A.letterFile
+      });
+
+      if (result && result.persisted) {
+        A.submitted = true;
+        const pending = result.attachmentsPendingUpload;
+        if (pending && pending.length) {
+          setSaveState(
+            "Your application is <b>saved</b> under reference <b>" + esc(A.ref) + "</b>. " +
+            "Some attachments could not be uploaded, so admissions staff will contact you on <b>" +
+            esc(A.phone || "the number provided") + "</b> to collect them.",
+            "ok"
+          );
+        } else {
+          setSaveState(
+            "Your application is <b>saved</b> in the admissions database under reference <b>" +
+            esc(A.ref) + "</b>.",
+            "ok"
+          );
+        }
+      } else {
+        A.submitted = false;
+        setSaveState(
+          "We could not reach the admissions database. Your application is held on this device under " +
+          "reference <b>" + esc(A.ref) + "</b> and will be sent automatically when you are back online. " +
+          '<button class="btn quiet" style="margin-top:12px" onclick="window.app.retrySubmit()">Try saving again</button>'
+        );
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      A.submitted = false;
+      setSaveState(
+        "We could not save your application. It is held on this device under reference <b>" +
+        esc(A.ref) + "</b>. " +
+        '<button class="btn quiet" style="margin-top:12px" onclick="window.app.retrySubmit()">Try saving again</button>'
+      );
+    } finally {
+      // Always clear the latch so a failed save can be retried.
+      A.isSubmitting = false;
+    }
+  }
+
+  function retrySubmit() {
+    if (A.isSubmitting || A.submitted) return;
+    persistApplication();
   }
 
   function aNext() {
@@ -819,7 +908,7 @@ export const ApplicationFlow = (function () {
         letterName: A.letterName,
         receipt: A.receipt,
         receiptName: A.receiptName
-      });
+      }).catch((e) => console.warn("Draft save failed:", e));
     }
     if (id === "progfee") {
       if (progDue()[1] && !A.receipt2 && !A.payProgLater) {
@@ -1016,6 +1105,7 @@ export const ApplicationFlow = (function () {
     pickFile,
     submitPayLater,
     submitWithProgReceipt,
+    retrySubmit,
     getState: () => A
   };
 })();
