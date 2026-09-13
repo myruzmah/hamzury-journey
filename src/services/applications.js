@@ -357,6 +357,43 @@ export async function saveDraftApplication(appData) {
 }
 
 /**
+ * Returns the most recent application on this device that was paid for
+ * but never submitted, so the applicant can be offered the chance to
+ * finish it.
+ *
+ * Only a draft qualifies: a submitted application must never trigger a
+ * resume prompt.
+ *
+ * @returns {object|null} the unfinished draft, or null
+ */
+export function getUnfinishedApplication() {
+  let reference = null;
+  try {
+    reference = localStorage.getItem("hamzury.lastAppRef");
+  } catch (e) {
+    return null;
+  }
+  if (!reference) return null;
+
+  try {
+    const cached = JSON.parse(localStorage.getItem(`hamzury.app.${reference}`) || "null");
+    if (cached && cached.ref && cached.status === "draft_fee_paid") return cached;
+  } catch (e) {}
+
+  return null;
+}
+
+/**
+ * Forgets the unfinished application on this device, so the resume
+ * prompt stops appearing once the applicant chooses to start over.
+ */
+export function clearUnfinishedApplication() {
+  try {
+    localStorage.removeItem("hamzury.lastAppRef");
+  } catch (e) {}
+}
+
+/**
  * Looks up an application by its unique HMZ reference ID
  * @param {string} refQuery - HMZ reference string
  * @returns {Promise<object|null>} Application data or null

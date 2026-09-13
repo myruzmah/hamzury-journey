@@ -149,6 +149,35 @@ export const STEP_LABEL = {
   slip: "Your slip"
 };
 
+/* ------------------------------------------------------------------
+   THE TWO STAGES OF AN APPLICATION
+
+   Stage 1 ends once the application fee receipt is attached.
+   Stage 2 is the application proper, and ends at the slip.
+
+   Applicants were treating the fee payment as the end of the process,
+   paying and never submitting, so every step states which stage it
+   belongs to. Both FLOW arrays split at the same point, so no
+   per-route special casing is needed.
+   ------------------------------------------------------------------ */
+export const STAGE = {
+  edu: 1,
+  details: 1,
+  placement: 1,
+  fee: 1,
+  bridge: 2,
+  programme: 2,
+  requirement: 2,
+  check: 2,
+  progfee: 2,
+  slip: 2
+};
+
+export const STAGE_NAME = {
+  1: "Application Fee",
+  2: "Your Application"
+};
+
 export const PHASE = {
   edu: "p-learn",
   details: "p-you",

@@ -186,6 +186,8 @@ window.app = {
   submitWithProgReceipt: () => ApplicationFlow.submitWithProgReceipt(),
   retrySubmit: () => ApplicationFlow.retrySubmit(),
   printSlip: () => ApplicationFlow.printSlip(),
+  resumeApp: () => ApplicationFlow.resumeApp(),
+  discardResume: () => ApplicationFlow.discardResume(),
 
   // Enquiries & Status
   sendEnquiry: (k) => handleEnquirySubmission(k),

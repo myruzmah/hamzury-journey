@@ -4,9 +4,14 @@
    ============================================================ */
 import { $, N, FEE, BANK, WHATSAPP, mkRef, nextIntake, payRow, fact, esc } from "../data/constants.js";
 import { TR, trk } from "../data/tracks.js";
-import { RT, EDU, FLOW, STEP_LABEL, PHASE } from "../data/routes.js";
+import { RT, EDU, FLOW, STEP_LABEL, PHASE, STAGE, STAGE_NAME } from "../data/routes.js";
 import { CHK, CHK_FOUNDER, CHK_ECO, CHK_JUNIOR, checkPasses } from "../data/questions.js";
-import { submitApplication, saveDraftApplication } from "../services/applications.js";
+import {
+  submitApplication,
+  saveDraftApplication,
+  getUnfinishedApplication,
+  clearUnfinishedApplication
+} from "../services/applications.js";
 import { getAllCourses } from "../services/courses.js";
 import { Router } from "./router.js";
 import { Guide } from "./guide.js";
@@ -52,6 +57,10 @@ export const ApplicationFlow = (function () {
     submitted: false
   };
 
+  /* An unfinished application waiting to be offered back to the
+     applicant. Held outside A because A is reset on every fresh start. */
+  let pendingResume = null;
+
   const currentFlow = () => FLOW[A.route] || FLOW.DEFAULT;
   const currentStepId = () => currentFlow()[A.s];
 
@@ -73,6 +82,16 @@ export const ApplicationFlow = (function () {
         Router.open("apply");
         return;
       }
+    }
+
+    /* An applicant who paid the fee on a previous visit and never
+       submitted is offered their application back, rather than being
+       silently started again from zero. */
+    const unfinished = getUnfinishedApplication();
+    if (unfinished && !A.ref) {
+      pendingResume = unfinished;
+      Router.open("apply");
+      return;
     }
 
     Object.assign(A, {
@@ -210,16 +229,59 @@ export const ApplicationFlow = (function () {
     return L.join("\n");
   }
 
+  /* Which stage the applicant is currently in (1 or 2). */
+  function currentStage() {
+    return STAGE[currentStepId()] || 1;
+  }
+
+  /* Steps still to complete after this one, across the whole flow. */
+  function stepsRemaining() {
+    return Math.max(0, currentFlow().length - 1 - A.s);
+  }
+
+  /* ------------------------------------------------------------
+     Progress header.
+
+     Previously this was a row of unlabelled 2px bars: no stage, no
+     numbers, no total. An applicant on the fee step had no way to know
+     six more steps followed, so many paid and stopped. It now names the
+     stage, counts the steps, and - during stage 1 - says outright that
+     paying is not the end.
+     ------------------------------------------------------------ */
   function renderProgHeader() {
+    const flow = currentFlow();
+    const stage = currentStage();
+    const total = flow.length;
+    const stepNo = A.s + 1;
+
+    // Bars are grouped so the stage boundary is visible at a glance.
+    const bars = flow
+      .map((id, i) => {
+        const boundary = i > 0 && STAGE[id] !== STAGE[flow[i - 1]] ? " gap" : "";
+        return (
+          '<i class="' +
+          (i <= A.s ? PHASE[id] : "") +
+          (i === A.s ? " now" : "") +
+          boundary +
+          '"></i>'
+        );
+      })
+      .join("");
+
     return (
-      '<div class="prog">' +
-      currentFlow()
-        .map((id, i) => '<i class="' + (i <= A.s ? PHASE[id] : "") + (i === A.s ? " now" : "") + '"></i>')
-        .join("") +
+      '<div class="stagebar">' +
+      '<span class="stagebar-now">Stage ' + stage + " of 2 &middot; " + esc(STAGE_NAME[stage]) + "</span>" +
+      '<span class="stagebar-step">Step ' + stepNo + " of " + total + "</span>" +
       "</div>" +
-      '<div class="label" style="margin-bottom:20px">' +
+      '<div class="prog">' +
+      bars +
+      "</div>" +
+      '<div class="label" style="margin-bottom:' + (stage === 1 ? "10px" : "20px") + '">' +
       STEP_LABEL[currentStepId()] +
-      "</div>"
+      "</div>" +
+      (stage === 1
+        ? '<p class="stage-hint">Stage 1 is the application fee. Your application continues in Stage 2 after this &mdash; paying alone does not complete it.</p>'
+        : "")
     );
   }
 
@@ -240,9 +302,85 @@ export const ApplicationFlow = (function () {
     return !message;
   }
 
+  /* ------------------------------------------------------------
+     Offers an unfinished application back to the applicant, instead of
+     restarting them from a blank form and orphaning the fee they paid.
+     ------------------------------------------------------------ */
+  function renderResumePrompt(box, draft) {
+    const flow = FLOW[draft.route] || FLOW.DEFAULT;
+    const bridgeIdx = flow.indexOf("bridge");
+    const left = bridgeIdx === -1 ? flow.length - 1 : flow.length - 1 - bridgeIdx;
+
+    box.innerHTML =
+      '<div class="label accent">Unfinished application found</div>' +
+      '<h2 style="margin:12px 0 8px">You already started an application.</h2>' +
+      '<div class="sub">Your application fee was received, but the application was never submitted.</div>' +
+      '<dl class="facts" style="margin-top:22px">' +
+      fact("Reference", '<strong style="color:var(--gold)">' + esc(draft.ref) + "</strong>") +
+      fact("Applicant", esc(draft.name || "—")) +
+      fact("Route", esc((RT[draft.route] || {}).t || "—")) +
+      fact("Stage", "Stage 2 of 2 · " + left + " step" + (left === 1 ? "" : "s") + " remaining") +
+      "</dl>" +
+      '<div class="note" style="margin-top:18px">Continue where you stopped so your payment is not wasted. ' +
+      "Starting over creates a new reference, and your fee would have to be paid again.</div>" +
+      '<div class="actions" style="margin-top:24px">' +
+      '<button class="btn primary" onclick="window.app.resumeApp()">Continue my application</button>' +
+      '<button class="btn quiet" onclick="window.app.discardResume()">Start over</button>' +
+      "</div>";
+  }
+
+  /* Restores a draft and drops the applicant at the start of Stage 2. */
+  function resumeApp() {
+    const draft = pendingResume;
+    if (!draft) return;
+    pendingResume = null;
+
+    const flow = FLOW[draft.route] || FLOW.DEFAULT;
+    const bridgeIdx = flow.indexOf("bridge");
+
+    Object.assign(A, {
+      ref: draft.ref,
+      name: draft.name || "",
+      email: draft.email || "",
+      phone: draft.phone || "",
+      location: draft.location || "",
+      route: draft.route || "ceo",
+      track: draft.track || null,
+      months: draft.months || null,
+      // The receipt file itself cannot be restored - browsers do not allow
+      // rebuilding a File - but it was already uploaded during Stage 1, so
+      // the stored name is shown as attached rather than asked for again.
+      receiptName: draft.payments?.applicationFee?.receiptName || draft.receiptName || null,
+      receipt: draft.payments?.applicationFee?.receiptUrl || null,
+      letterName: draft.letterName || null,
+      termsAccepted: true,
+      termsAcceptedAt: draft.updatedAt || new Date().toISOString(),
+      s: bridgeIdx === -1 ? 0 : bridgeIdx,
+      submitted: false,
+      isSubmitting: false
+    });
+
+    const guideState = Guide.getState();
+    if (A.route === "junior") guideState.age = "13-16";
+
+    renderStep();
+  }
+
+  /* Abandons the unfinished application and starts a clean one. */
+  function discardResume() {
+    pendingResume = null;
+    clearUnfinishedApplication();
+    startApp(A.route || "ceo", null);
+  }
+
   function renderStep() {
     const box = $("#a");
     if (!box) return;
+
+    if (pendingResume) {
+      renderResumePrompt(box, pendingResume);
+      return;
+    }
     const guideState = Guide.getState();
     const r = A.route ? RT[A.route] : null;
     let h = renderProgHeader();
@@ -433,17 +571,30 @@ export const ApplicationFlow = (function () {
           '  </label>' +
           '  <div class="err" id="e-terms" style="margin-top:6px"></div>' +
           '</div>' +
-          acts(true, "window.app.aNext()", "I have paid");
+          '<p class="stage-hint" style="margin-top:16px">This fee covers your assessment and placement. ' +
+          'It does not guarantee admission, and it does not finish your application &mdash; ' +
+          "you have " + stepsRemaining() + " more step" + (stepsRemaining() === 1 ? "" : "s") +
+          " to complete after this.</p>" +
+          acts(true, "window.app.aNext()", "I have paid &mdash; Continue to Stage 2");
         break;
 
-      case "bridge":
-        h =
-          '<div class="label accent">Application fee received</div>' +
-          '<h2 style="margin:12px 0 8px">Now choose what you will build on.</h2>' +
-          '<div class="sub">The next step is the programme your business is built around. Then we check where you start.</div>' +
+      case "bridge": {
+        // The hand-off between the two stages. Applicants were stopping
+        // here believing the fee completed the application, so this screen
+        // states plainly that it did not.
+        const left = stepsRemaining();
+        h +=
+          '<div class="label accent">&#10003; Stage 1 complete &middot; Application fee received</div>' +
+          '<h2 style="margin:12px 0 8px">Your application is not finished yet.</h2>' +
+          '<div class="sub">You have paid the application fee. Stage 2 is the application itself &mdash; ' +
+          "the programme you will build on, and a short check of where you start. " +
+          "<b>" + left + " step" + (left === 1 ? "" : "s") + " remaining.</b></div>" +
+          '<div class="note" style="margin-top:18px">If you stop now your application will not be submitted, ' +
+          "and our admissions team will not be able to review it.</div>" +
           '<div class="actions"><button class="btn quiet" onclick="window.app.aBack()">Back</button>' +
-          '<button class="btn primary" onclick="window.app.aNext()">Next</button></div>';
+          '<button class="btn primary" onclick="window.app.aNext()">Continue my application</button></div>';
         break;
+      }
 
       case "programme": {
         if (A.route === "founder" || A.route === "ecosystem") {
@@ -669,6 +820,7 @@ export const ApplicationFlow = (function () {
           esc(A.ref) +
           "</span></div>" +
           '<div class="success-mark" style="margin:18px auto 10px;width:56px;height:56px;border-radius:50%;background:rgba(233,162,76,0.15);border:2px solid var(--gold);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:30px;line-height:1">&#10003;</div>' +
+          '<div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px">Stage 2 of 2 &middot; Complete</div>' +
           '<h2 style="margin:8px 0 4px;text-align:center">Application Successful</h2>' +
           '<p class="sub" style="margin-bottom:8px;text-align:center">' +
           esc(A.name || "Applicant") +
@@ -1142,6 +1294,8 @@ export const ApplicationFlow = (function () {
     submitWithProgReceipt,
     retrySubmit,
     printSlip,
+    resumeApp,
+    discardResume,
     getState: () => A
   };
 })();

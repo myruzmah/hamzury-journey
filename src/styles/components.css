@@ -580,10 +580,47 @@
 }
 
 /* ---------- Progress Indicators ---------- */
+/* ---------- Stage & step orientation ---------- */
+.stagebar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.stagebar-now {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.stagebar-step {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.stage-hint {
+  margin: 0 0 20px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
 .prog {
   display: flex;
   gap: 4px;
   margin-bottom: 26px;
+}
+
+/* Visual break between stage 1 and stage 2 on the progress bar. */
+.prog i.gap {
+  margin-left: 14px;
 }
 
 .prog i {
@@ -1159,32 +1196,51 @@
     overflow: visible !important;
   }
 
-  /* Show the slip even though the modal is a fixed overlay on screen. */
-  .modal {
+  /* Show the slip even though the modal is a fixed overlay on screen.
+     .modal.open sets display:flex, so it must be named explicitly here -
+     a plain .modal rule loses to it on specificity and the slip stays
+     trapped in a centred flex box, printing blank pages. */
+  .modal,
+  .modal.open {
     position: static !important;
     display: block !important;
+    align-items: initial !important;
+    justify-content: initial !important;
     background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     inset: auto !important;
     z-index: auto !important;
+    animation: none !important;
   }
 
   .modal[hidden] {
     display: none !important;
   }
 
+  /* .panel is a 100vh scroll box on screen. Left as-is it clips the slip
+     to one screen and emits blank trailing pages. */
   .panel {
     border: none !important;
     padding: 0 !important;
+    width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
     max-height: none !important;
-    min-height: auto !important;
+    min-height: 0 !important;
     overflow: visible !important;
+    overflow-y: visible !important;
     box-shadow: none !important;
     background: transparent !important;
     color: #111 !important;
     transform: none !important;
+    animation: none !important;
+  }
+
+  /* Nothing inside the slip may clip its own content on paper. */
+  .slip, .facts, .amt, .note, #content {
+    overflow: visible !important;
+    max-height: none !important;
   }
 
   /* Interactive controls carry no meaning on paper. */
