@@ -668,11 +668,16 @@ export const ApplicationFlow = (function () {
           '<div class="sliphead"><span>Hamzury Innovation Hub</span><span id="slip-ref">' +
           esc(A.ref) +
           "</span></div>" +
-          '<div style="margin:16px 0 6px;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:rgba(233,162,76,0.15);border:1px solid var(--gold);color:var(--gold);border-radius:16px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase">✓ Registration Successful</div>' +
-          '<h2 style="margin:8px 0 4px">Application Submitted</h2>' +
-          '<p class="sub" style="margin-bottom:20px">' +
+          '<div class="success-mark" style="margin:18px auto 10px;width:56px;height:56px;border-radius:50%;background:rgba(233,162,76,0.15);border:2px solid var(--gold);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:30px;line-height:1">&#10003;</div>' +
+          '<h2 style="margin:8px 0 4px;text-align:center">Application Successful</h2>' +
+          '<p class="sub" style="margin-bottom:8px;text-align:center">' +
           esc(A.name || "Applicant") +
           "</p>" +
+          '<p style="text-align:center;margin:0 0 22px;font-size:14px;line-height:1.6;color:var(--muted)">' +
+          "Thank you for applying to Hamzury Innovation Hub. Our admissions team will review " +
+          "your application and <b>contact you soon</b>" +
+          (A.phone ? " on <b>" + esc(A.phone) + "</b>" : "") +
+          ".</p>" +
           '<dl class="facts">' +
           fact("Reference", '<strong style="color:var(--gold)">' + esc(A.ref) + '</strong>') +
           fact("Applicant", esc(A.name || "—") + (A.phone ? " · " + esc(A.phone) : "")) +
@@ -703,14 +708,14 @@ export const ApplicationFlow = (function () {
             : "") +
           '<p class="tiny" style="margin-top:20px">Your payment proof and application files are verified by Hamzury staff. Admission is not automatic.</p>' +
           "</div>" +
-          '<div class="note ok" style="border-color:var(--gold);margin-top:16px">Thank you, <b>' +
-          esc(A.name || "Applicant") +
-          '</b>. Your records have been saved securely in our admissions database. ' +
-          "Staff will review your evidence and reach you at <b>" +
-          esc(A.phone || "the phone number provided") +
-          "</b>. Quote your reference <b>" +
+          '<div class="note ok" style="border-color:var(--gold);margin-top:16px">' +
+          "<b>What happens next.</b> Our admissions team reviews your payment evidence and " +
+          "application documents, then contacts you" +
+          (A.phone ? " on <b>" + esc(A.phone) + "</b>" : "") +
+          (A.email ? " or by email at <b>" + esc(A.email) + "</b>" : "") +
+          ". Keep your reference <b>" +
           esc(A.ref) +
-          "</b> to check your admission status anytime.</div>" +
+          "</b> \u2014 you can use it to check your admission status at any time.</div>" +
           '<div id="save-state" class="note" style="margin-top:16px">Saving your application to the admissions database…</div>' +
           '<div class="actions" style="margin-top:24px">' +
           '<button class="btn primary" onclick="window.print()">Print / Save as PDF</button>' +
@@ -798,18 +803,20 @@ export const ApplicationFlow = (function () {
 
       if (result && result.persisted) {
         A.submitted = true;
+        Router.toast("Application submitted successfully");
         const pending = result.attachmentsPendingUpload;
         if (pending && pending.length) {
           setSaveState(
-            "Your application is <b>saved</b> under reference <b>" + esc(A.ref) + "</b>. " +
-            "Some attachments could not be uploaded, so admissions staff will contact you on <b>" +
-            esc(A.phone || "the number provided") + "</b> to collect them.",
+            "&#10003; <b>Application received.</b> It is saved under reference <b>" + esc(A.ref) + "</b>. " +
+            "One or more of your files did not upload, so our team will contact you" +
+            (A.phone ? " on <b>" + esc(A.phone) + "</b>" : "") +
+            " to collect them.",
             "ok"
           );
         } else {
           setSaveState(
-            "Your application is <b>saved</b> in the admissions database under reference <b>" +
-            esc(A.ref) + "</b>.",
+            "&#10003; <b>Application received and saved.</b> Reference <b>" + esc(A.ref) +
+            "</b>. Our admissions team will contact you soon.",
             "ok"
           );
         }
