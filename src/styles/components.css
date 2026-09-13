@@ -1169,9 +1169,15 @@
   /* ------------------------------------------------------------
      PRINTING AN APPLICATION SLIP
 
-     Only the applicant's own slip may appear on the page. Everything
-     else - the landing page, navigation, buttons - is removed, so each
-     applicant's PDF contains their personal details and nothing else.
+     This block works by hiding EVERYTHING and then re-showing only the
+     chain that leads to the slip:
+
+         body > #modal > #panel > #content > #a > .slip
+
+     The previous version listed what to hide instead, which is how the
+     sticky page header slipped through and pushed the slip onto page 2,
+     leaving page 1 blank. Hiding by default means nothing added to the
+     page later can ever leak into an applicant's document.
      ------------------------------------------------------------ */
   @page {
     margin: 14mm;
@@ -1181,79 +1187,93 @@
     background: #fff !important;
     color: #111 !important;
     height: auto !important;
-    overflow: visible !important;
-  }
-
-  /* The landing page must never appear in an applicant's document. */
-  #main,
-  .panelbar, .foot, .topnav, .toast {
-    display: none !important;
-  }
-
-  /* body.locked fixes the page while the modal is open; undo for print. */
-  body.locked {
-    position: static !important;
-    overflow: visible !important;
-  }
-
-  /* Show the slip even though the modal is a fixed overlay on screen.
-     .modal.open sets display:flex, so it must be named explicitly here -
-     a plain .modal rule loses to it on specificity and the slip stays
-     trapped in a centred flex box, printing blank pages. */
-  .modal,
-  .modal.open {
-    position: static !important;
-    display: block !important;
-    align-items: initial !important;
-    justify-content: initial !important;
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    inset: auto !important;
-    z-index: auto !important;
-    animation: none !important;
-  }
-
-  .modal[hidden] {
-    display: none !important;
-  }
-
-  /* .panel is a 100vh scroll box on screen. Left as-is it clips the slip
-     to one screen and emits blank trailing pages. */
-  .panel {
-    border: none !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
     min-height: 0 !important;
     overflow: visible !important;
-    overflow-y: visible !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    color: #111 !important;
-    transform: none !important;
-    animation: none !important;
+    /* theme.css sets overflow-x:hidden, which clips printed content. */
+    overflow-x: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* Nothing inside the slip may clip its own content on paper. */
-  .slip, .facts, .amt, .note, #content {
-    overflow: visible !important;
-    max-height: none !important;
-  }
-
-  /* Interactive controls carry no meaning on paper. */
-  .actions, .btn, button, .upload, .upload-progress, #save-state {
+  /* Nothing prints unless it is explicitly re-shown below. */
+  body > * {
     display: none !important;
   }
 
-  /* The slip itself, rendered for paper. */
+  /* body::before is a position:fixed, inset:0 ambient glow overlay
+     (theme.css). It is a PSEUDO-element, so "body > *" cannot reach it,
+     and a full-viewport fixed box occupies an entire sheet - this is
+     what kept printing a blank first page. */
+  body::before,
+  body::after,
+  html::before,
+  html::after {
+    content: none !important;
+    display: none !important;
+    background: none !important;
+  }
+
+  /* Re-show ONLY the ancestor chain, by id. A blanket "#modal *" would
+     also un-hide the Print / WhatsApp / Done buttons and put them in the
+     PDF, so the subtree must NOT be re-shown wholesale. */
+  #modal,
+  #panel,
+  #content,
+  #a {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    inset: auto !important;
+    transform: none !important;
+    animation: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* A closed modal must stay closed (printing the landing page). */
+  #modal[hidden] {
+    display: none !important;
+  }
+
+  /* Controls and progress chrome carry no meaning on paper.
+     Must come AFTER the re-show above to win.
+     #mt is the modal's view heading ("Apply") - the slip carries its own
+     title, so the view heading would just read as a stray word. */
+  .actions, .btn, button,
+  .upload, .upload-box, .upload-progress,
+  .panelbar, #save-state, #mt,
+  .prog, .stagebar, .stage-hint,
+  .terms-approval, .receipt-thumb-preview {
+    display: none !important;
+  }
+
+  /* The slip must FLOW across pages. break-inside:avoid here was the
+     cause of the blank first page: the slip is taller than one sheet, so
+     the browser could not honour it and pushed the whole block over. */
   .slip {
+    break-inside: auto;
+    page-break-inside: auto;
     background: #fff !important;
-    border: 1px solid #bbb !important;
     color: #111 !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Individual rows do fit on a page, so keep those intact. */
+  .fact, .amt, .note, .sliphead {
     break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .slip .sliphead {
@@ -1277,14 +1297,12 @@
 
   .facts > div, .amt {
     border-color: #ddd !important;
-    break-inside: avoid;
   }
 
   .note {
     background: #fafafa !important;
     border: 1px solid #ccc !important;
     color: #222 !important;
-    break-inside: avoid;
   }
 
   /* Non-slip views that are still worth printing (prospectus, terms). */
