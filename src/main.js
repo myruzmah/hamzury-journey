@@ -206,6 +206,7 @@ window.app = {
   adminExportCSV: () => AdminDashboard.exportCSV(),
   adminCopy: (text, label) => AdminDashboard.copyText(text, label),
   adminRefresh: () => AdminDashboard.refresh(),
+  adminRunDiagnostics: () => AdminDashboard.runSystemCheck(),
 
   // UI helpers
   toggleValues,

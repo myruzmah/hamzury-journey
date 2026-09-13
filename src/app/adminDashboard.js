@@ -549,7 +549,7 @@ export const AdminDashboard = (function () {
           `;
         });
       }
-    } else {
+    } else if (currentTab === "courses") {
       // Courses & Programmes Tab
       h += `
         <div class="admin-form-box">
@@ -619,9 +619,68 @@ export const AdminDashboard = (function () {
             .join("")}
         </div>
       `;
+    } else if (currentTab === "system") {
+      h += `
+        <div class="admin-bar">
+          <div style="flex:1;font-size:13px;color:var(--muted);line-height:1.5">
+            Confirms that receipts can be stored and that applications can reach this dashboard.
+            Run this whenever an applicant reports a missing submission.
+          </div>
+          <button class="btn-admin verify" onclick="window.app.adminRunDiagnostics()" ${diagnosticsRunning ? "disabled" : ""}>
+            ${diagnosticsRunning ? "Checking\u2026" : "\u25b6 Run system check"}
+          </button>
+        </div>
+      `;
+
+      if (diagnosticsRunning) {
+        h += '<div class="note" style="margin-top:16px">Running checks. This uploads one small test file and writes one test record, then removes it.</div>';
+      } else if (!diagnostics) {
+        h += '<div class="note" style="margin-top:16px">No check has been run yet. Press <b>Run system check</b> above.</div>';
+      } else {
+        const failing = diagnostics.filter((d) => !d.ok).length;
+        h += failing
+          ? `<div class="note" style="margin-top:16px"><b>${failing} problem${failing === 1 ? "" : "s"} found.</b> Applications may not be saving correctly until fixed.</div>`
+          : '<div class="note ok" style="margin-top:16px"><b>All checks passed.</b> Receipts and applications are saving correctly.</div>';
+
+        h += '<div style="margin-top:16px">';
+        diagnostics.forEach((d) => {
+          h += `
+            <div class="admin-card" style="margin-bottom:12px">
+              <div class="admin-card-head">
+                <div class="admin-card-title">${esc(d.title)}</div>
+                <div>${d.ok ? '<span class="badge verified">Pass</span>' : '<span class="badge rejected">Fail</span>'}</div>
+              </div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px">${esc(d.detail)}</div>
+              ${d.fix ? `<div class="note" style="margin-top:12px"><b>How to fix:</b> ${esc(d.fix)}</div>` : ""}
+              ${d.url ? `<div style="margin-top:10px"><a href="${esc(d.url)}" target="_blank" rel="noopener" class="admin-doc-link">View test upload &#8599;</a></div>` : ""}
+            </div>
+          `;
+        });
+        h += "</div>";
+      }
     }
 
     root.innerHTML = h;
+  }
+
+  /**
+   * Runs the storage and database checks and repaints the panel.
+   */
+  async function runSystemCheck() {
+    if (diagnosticsRunning) return;
+    diagnosticsRunning = true;
+    diagnostics = null;
+    renderContent();
+    try {
+      diagnostics = await runDiagnostics();
+    } catch (e) {
+      diagnostics = [
+        { ok: false, title: "System check", detail: String((e && e.message) || e) }
+      ];
+    } finally {
+      diagnosticsRunning = false;
+      renderContent();
+    }
   }
 
   function render() {
@@ -633,6 +692,7 @@ export const AdminDashboard = (function () {
     login,
     logout,
     setTab,
+    runSystemCheck,
     setFilter,
     handleSearch,
     verifyApplicant,

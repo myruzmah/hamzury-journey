@@ -25,7 +25,7 @@ export async function fetchAllApplications() {
     if (key && key.startsWith("hamzury.app.HMZ-")) {
       try {
         const item = JSON.parse(localStorage.getItem(key));
-        if (item && item.ref && !item.name?.includes("Amina Bello (Demo)")) {
+        if (item && item.ref && !item.name?.includes("Amina Bello (Demo)") && item.status !== "diagnostic") {
           map.set(item.ref, item);
         }
       } catch (e) {}
@@ -38,7 +38,7 @@ export async function fetchAllApplications() {
       const snap = await getDocs(collection(db, "applications"));
       snap.forEach((docSnap) => {
         const data = docSnap.data();
-        if (data && data.ref && !data.name?.includes("Amina Bello (Demo)")) {
+        if (data && data.ref && !data.name?.includes("Amina Bello (Demo)") && data.status !== "diagnostic") {
           map.set(data.ref, { id: docSnap.id, ...data });
         }
       });
